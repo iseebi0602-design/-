@@ -17,6 +17,7 @@ button.secondary{background:#eef2f7;color:#172033}.row{display:grid;grid-templat
 .jp{text-align:center;font-size:20px;margin:12px}.msg{text-align:center;min-height:28px;font-weight:600}
 .actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1;min-width:130px}
 .stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
+.groupNote{font-size:13px;color:#667085;margin-top:-4px;margin-bottom:10px}
 @media(max-width:600px){.row{grid-template-columns:1fr}.wrap{padding:14px}.card{padding:18px}}
 </style>
 </head>
@@ -49,10 +50,14 @@ button.secondary{background:#eef2f7;color:#172033}.row{display:grid;grid-templat
     </div>
 
     <div class="card">
-      <h2>CSVを読み込む</h2>
-      <p class="muted">形式：番号,日本語,英単語,解説</p>
+      <h2>単語データ</h2>
+      <p class="muted">Leap単語帳.csvを標準データとして使えます。別のCSVに変更することもできます。</p>
       <input id="csv" type="file" accept=".csv,text/csv">
       <p id="csvMsg" class="msg"></p>
+      <label>100語グループ</label>
+      <select id="group">
+        <option value="all">すべて</option>
+      </select>
     </div>
 
     <div class="card">
@@ -149,15 +154,50 @@ function parseCSV(text){
   return rows;
 }
 
+function rebuildGroups(){
+  const sel=$("group");
+  sel.innerHTML='<option value="all">すべて</option>';
+  if(!words.length)return;
+  const max=Math.max(...words.map(w=>w.no));
+  for(let start=1;start<=max;start+=100){
+    const end=Math.min(start+99,max);
+    const n=words.filter(w=>w.no>=start&&w.no<=end).length;
+    if(n)sel.insertAdjacentHTML("beforeend",`<option value="${start}-${end}">${start}〜${end}（${n}語）</option>`);
+  }
+}
+function applyGroup(){
+  const v=$("group").value;
+  if(v==="all")return;
+  const [a,b]=v.split("-").map(Number);
+  $("start").value=a;
+  $("end").value=b;
+}
+$("group").onchange=applyGroup;
+
+async function loadCSVText(rawText, label="CSV"){
+  const rows=parseCSV(rawText);
+  words=rows.map((r,i)=>{
+    // Supports the current Leap CSV layout: number, English, Japanese, explanation.
+    // Also tolerates the previously documented number, Japanese, English, explanation layout.
+    let no=Number(r[0]||i+1), a=(r[1]||"").trim(), b=(r[2]||"").trim(), exp=(r[3]||"").trim();
+    const looksEnglish=s=>/^[A-Za-z][A-Za-z' -]*$/.test(s);
+    const en=looksEnglish(a)?a:(looksEnglish(b)?b:"");
+    const jp=en===a?b:a;
+    return {no,jp,en,exp};
+  }).filter(w=>w.en);
+  localStorage.setItem("leap_words_csv", rawText);
+  localStorage.setItem("leap_words_name", label);
+  rebuildGroups();
+  msg($("csvMsg"),words.length+"語を読み込みました");
+}
 $("csv").onchange=async e=>{
   const f=e.target.files[0]; if(!f)return;
-  const text=await f.text(), rows=parseCSV(text);
-  words=rows.map((r,i)=>({
-    no:Number(r[0]||i+1), jp:(r[1]||"").trim(), en:(r[2]||"").trim(),
-    exp:(r[3]||"").trim()
-  })).filter(w=>w.en);
-  msg($("csvMsg"),words.length+"語を読み込みました");
+  await loadCSVText(await f.text(),f.name);
 };
+(async()=>{
+  const saved=localStorage.getItem("leap_words_csv");
+  if(saved) await loadCSVText(saved,localStorage.getItem("leap_words_name")||"保存済みCSV");
+})();
 
 async function getStats(no){
   const {data,error}=await supabaseClient.from("word_stats").select("*").eq("word_no",no).maybeSingle();
@@ -175,6 +215,7 @@ async function saveStats(no,correct){
 }
 
 async function buildQueue(){
+  applyGroup();
   const start=Number($("start").value), end=Number($("end").value);
   let pool=words.filter(w=>w.no>=start&&w.no<=end);
   const mode=$("mode").value;
