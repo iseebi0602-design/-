@@ -200,7 +200,7 @@ function renderQuizActive(el){
       <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">調子 <b>${v.cond}</b></div></div>
       <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
     </div>`;
-  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter")checkAnswer()})}
+  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}})}
   else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkAnswer(4,true):checkAnswer(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>endQuiz();
 }
