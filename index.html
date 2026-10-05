@@ -91,6 +91,7 @@ function record(no,ok,deltaOverride=null){
   const d=deltaOverride!==null?deltaOverride:(ok?10:-5);
   v.cond=Math.max(0,Math.min(100,(old.cond??50)+d));
   s[no]=v; saveDB();
+  cloudSaveWordStats(currentDataset,no,v).catch(e=>console.warn("cloudSaveWordStats",e));
   return {before:old.cond??50,after:v.cond};
 }
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
@@ -274,7 +275,7 @@ function renderBook(){
   search.oninput=filter.onchange=sort.onchange=apply;
   document.getElementById("addCsv").onclick=()=>document.getElementById("csvFile").click();
   document.getElementById("csvFile").onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>importCSV(reader.result,file.name);reader.readAsText(file,"UTF-8")};
-  document.getElementById("clearStats").onclick=()=>{if(confirm("この単語帳の学習記録をすべて削除します。よろしいですか？")){d.stats={};saveDB();render()}}
+  document.getElementById("clearStats").onclick=async()=>{if(confirm("この単語帳の学習記録をすべて削除します。よろしいですか？")){d.stats={};saveDB();if(auth?.access_token){try{await sbFetch("word_stats?user_id=eq."+encodeURIComponent(auth.user.id)+"&dataset_id=eq."+encodeURIComponent(d.id),{method:"DELETE",headers:{"Prefer":"return=minimal"}})}catch(e){console.warn(e)}}render()}}
   apply();
 }
 function wordRow(w){
@@ -293,17 +294,125 @@ function csvParse(str){
   for(let i=0;i<str.length;i++){const c=str[i],n=str[i+1];if(c=='"'&&q&&n=='"'){cell+='"';i++;continue}if(c=='"'){q=!q;continue}if(c==','&&!q){row.push(cell);cell="";continue}if((c=='\n'||c=='\r')&&!q){if(c=='\r'&&n=='\n')i++;row.push(cell);out.push(row);row=[];cell="";continue}cell+=c}row.push(cell);if(row.length>1||row[0])out.push(row);return out;
 }
 function showScreen(which){document.getElementById("quizScreen").classList.toggle("active",which==="quiz");document.getElementById("bookScreen").classList.toggle("active",which==="book");document.getElementById("navQuiz").classList.toggle("active",which==="quiz");document.getElementById("navBook").classList.toggle("active",which==="book")}
+
+const SUPABASE_URL="https://rxbzpbpgtobwyrvlrvgk.supabase.co";
+const SUPABASE_KEY="sb_publishable_fSAK1aeplM9tW_YQKD9c3Q_ujspntUw";
+const AUTH_KEY="rhythm_v3_auth";
+
+function authLoad(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||"null")}catch(e){return null}}
+let auth=authLoad();
+
+async function sbFetch(path, opts={}){
+  const headers={"apikey":SUPABASE_KEY,"Content-Type":"application/json","Prefer":"return=representation",...(opts.headers||{})};
+  if(auth?.access_token) headers.Authorization="Bearer "+auth.access_token;
+  const r=await fetch(SUPABASE_URL+"/rest/v1/"+path,{...opts,headers});
+  if(!r.ok) throw new Error(await r.text());
+  return r.status===204?null:r.json();
+}
+async function authFetch(path, body){
+  const r=await fetch(SUPABASE_URL+"/auth/v1/"+path,{
+    method:"POST",
+    headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  });
+  const data=await r.json();
+  if(!r.ok) throw new Error(data.msg||data.error_description||data.message||"認証に失敗しました");
+  return data;
+}
+function authSave(x){auth=x;localStorage.setItem(AUTH_KEY,JSON.stringify(x))}
+function authClear(){auth=null;localStorage.removeItem(AUTH_KEY)}
+
+async function cloudSaveWordStats(datasetId, wordNo, v){
+  if(!auth?.access_token)return;
+  await sbFetch("word_stats?on_conflict=user_id,dataset_id,word_no",{
+    method:"POST",
+    headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify({user_id:auth.user.id,dataset_id:datasetId,word_no:wordNo,correct:v.correct,wrong:v.wrong,total:v.total,cond:v.cond,recent:v.recent||[],updated_at:new Date().toISOString()})
+  });
+}
+async function cloudLoadStats(){
+  if(!auth?.access_token)return;
+  try{
+    const rows=await sbFetch("word_stats?select=dataset_id,word_no,correct,wrong,total,cond,recent&user_id=eq."+encodeURIComponent(auth.user.id));
+    for(const r of rows){
+      if(!db.datasets[r.dataset_id])continue;
+      db.datasets[r.dataset_id].stats[r.word_no]={correct:r.correct||0,wrong:r.wrong||0,total:r.total||0,cond:r.cond??50,recent:r.recent||[]};
+    }
+    saveDB();
+  }catch(e){console.warn("cloudLoadStats",e)}
+}
+async function migrateGuestToCloud(){
+  if(!auth?.access_token)return;
+  for(const d of Object.values(db.datasets)){
+    for(const [no,v] of Object.entries(d.stats||{})){
+      if((v.total||0)>0)try{await cloudSaveWordStats(d.id,+no,v)}catch(e){}
+    }
+  }
+}
+function authModal(){
+  const old=document.getElementById("authModal"); if(old)old.remove();
+  const div=document.createElement("div");div.id="authModal";
+  div.innerHTML=`<div style="position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:9999;padding:15px">
+    <div class="panel" style="width:min(430px,100%);position:relative">
+      <button id="authClose" class="secondary" style="position:absolute;right:12px;top:12px">閉じる</button>
+      <h2>ログイン</h2>
+      <p class="muted">ログインすると学習記録をSupabaseに同期できます。</p>
+      <div class="field"><label>メールアドレス</label><input id="authEmail" type="email" autocomplete="email" style="width:100%"></div>
+      <div class="field" style="margin-top:10px"><label>パスワード</label><input id="authPass" type="password" autocomplete="current-password" style="width:100%"></div>
+      <div class="dataActions">
+        <button id="authLogin" class="primary">ログイン</button>
+        <button id="authSignup" class="secondary">新規登録</button>
+      </div>
+      <div id="authMsg" class="muted" style="margin-top:10px"></div>
+    </div></div>`;
+  document.body.appendChild(div);
+  document.getElementById("authClose").onclick=()=>div.remove();
+  async function go(type){
+    const email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPass").value;
+    if(!email||!password){document.getElementById("authMsg").textContent="メールアドレスとパスワードを入力してください。";return}
+    const msg=document.getElementById("authMsg");msg.textContent="処理中…";
+    try{
+      const data=await authFetch(type==="login"?"token?grant_type=password":"signup",{email,password});
+      if(type==="login"&&data.access_token){
+        authSave(data); await cloudLoadStats(); await migrateGuestToCloud(); msg.textContent="ログインしました。"; setTimeout(()=>{div.remove();updateLoginButton()},500);
+      }else if(type==="signup"){
+        msg.textContent=data.access_token?"登録・ログインしました。":"登録しました。メール確認が必要な場合があります。";
+        if(data.access_token){authSave(data);await cloudLoadStats();await migrateGuestToCloud();updateLoginButton()}
+      }
+    }catch(e){msg.textContent=e.message}
+  }
+  document.getElementById("authLogin").onclick=()=>go("login");
+  document.getElementById("authSignup").onclick=()=>go("signup");
+}
+function updateLoginButton(){
+  const b=document.getElementById("loginBtn");
+  if(!b)return;
+  if(auth?.access_token){b.textContent="ログアウト";b.onclick=async()=>{authClear();b.textContent="ログイン";b.onclick=authModal;render()}}
+  else {b.textContent="ログイン";b.onclick=authModal}
+}
+
 document.getElementById("navQuiz").onclick=()=>{showScreen("quiz");renderQuiz()};
 document.getElementById("navBook").onclick=()=>{showScreen("book");renderBook()};
 document.getElementById("themeBtn").onclick=()=>{const d=document.documentElement,t=d.dataset.theme==="dark"?"":"dark";d.dataset.theme=t;localStorage.setItem(THEME,t);document.getElementById("themeBtn").textContent=t?"☀":"☾"};
-document.getElementById("loginBtn").onclick=()=>alert("ログイン機能は次のアップデートでSupabase対応を入れます。今はゲストとして端末内に学習記録を保存します。");
+document.getElementById("loginBtn").onclick=authModal;
 if(localStorage.getItem(THEME)==="dark"){document.documentElement.dataset.theme="dark";document.getElementById("themeBtn").textContent="☀"}
-render();
+updateLoginButton();
+if(auth?.access_token) cloudLoadStats().then(()=>render()).catch(()=>render()); else render();
 document.addEventListener("keydown",e=>{
   if(e.key.toLowerCase()==="k" && quiz){e.preventDefault();quiz=null;renderQuiz()}
   if(!quiz||!quiz.active||quiz.answered)return;
   if(["1","2","3","4","5"].includes(e.key)&&quiz.currentMode!=="spell"){const i=+e.key-1;if(quiz.choices?.[i])checkAnswer(i)}
 });
+/*
+Supabase SQL (第3回版)
+既存 word_stats を拡張:
+alter table public.word_stats add column if not exists dataset_id text not null default 'leap-default';
+alter table public.word_stats add column if not exists cond integer not null default 50;
+alter table public.word_stats add column if not exists recent jsonb not null default '[]'::jsonb;
+alter table public.word_stats drop constraint if exists word_stats_pkey;
+alter table public.word_stats add primary key (user_id, dataset_id, word_no);
+*/
+
 </script>
 </body>
 </html>
