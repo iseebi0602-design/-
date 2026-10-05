@@ -25,7 +25,7 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
 .questionCard{text-align:center;padding:28px 14px 18px}.qLabel{font-size:14px;color:var(--muted);margin-bottom:6px}.question{font-size:clamp(30px,6vw,50px);font-weight:850;line-height:1.25;overflow-wrap:anywhere}.conditionNow{margin-top:12px;font-size:14px;color:var(--muted)}.conditionNow b{color:var(--text);font-size:18px}
 .answerArea{max-width:760px;margin:auto}.answerInput{width:100%;font-size:28px;text-align:center;padding:15px;border:2px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);outline:none}.answerInput:focus{border-color:var(--accent)}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice{min-height:66px;border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:12px;font-weight:700;overflow-wrap:anywhere}.choice:nth-child(5){grid-column:1/-1}.noneChoice{font-weight:800;border:2px solid var(--line);background:var(--bg)}.noneResult{font-size:16px;font-weight:800;color:var(--muted);margin:4px 0}.choice kbd{display:inline-flex;width:25px;height:25px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:7px;margin-right:7px;font-size:12px;color:var(--muted)}
-.result{margin-top:15px;text-align:center;padding:17px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}.resultTitle{font-size:38px;font-weight:900}.resultTitle.good{color:var(--good)}.resultTitle.bad{color:var(--bad)}.correctAnswer{font-size:25px;font-weight:850;margin:8px 0;overflow-wrap:anywhere}.diff{font-family:ui-monospace,monospace;font-size:22px;overflow-wrap:anywhere}.same{color:#4b84d8}.wrong{color:#d13d3d;text-decoration:underline}.missing{color:#2e9d64}.nextWrap{margin-top:12px}.nextWrap button{width:100%;font-size:17px;padding:13px}
+.result{margin-top:15px;text-align:center;padding:17px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}.resultTitle{font-size:38px;font-weight:900}.resultTitle.good{color:var(--good)}.resultTitle.bad{color:var(--bad)}.correctAnswer{font-size:25px;font-weight:850;margin:8px 0;overflow-wrap:anywhere}.diff{font-family:ui-monospace,monospace;font-size:22px;overflow-wrap:anywhere}.same{color:inherit}.wrong{color:#d13d3d;text-decoration:underline}.missing{color:#2e9d64}.nextWrap{margin-top:12px}.nextWrap button{width:100%;font-size:17px;padding:13px}
 .hidden{display:none!important}.sessionGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.bigStat{text-align:center;padding:15px;border:1px solid var(--line);border-radius:13px}.bigStat b{display:block;font-size:27px}.mistakeItem{display:flex;gap:10px;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}.mistakeItem:last-child{border-bottom:0}.tag{font-size:11px;border:1px solid var(--line);border-radius:7px;padding:3px 6px;color:var(--muted)}
 .datasetCard{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:8px}.datasetCard .name{font-weight:800;margin-right:auto}.small{font-size:12px}
 .empty{text-align:center;padding:35px;color:var(--muted)}
@@ -223,34 +223,46 @@ function checkAnswer(choiceIndex=null,isNone=false){
   document.getElementById("nextBtn").onclick=nextQuestion;
 }
 function diffHtml(a,b){
-  // Align the user's spelling and the correct spelling.
-  // Same = blue, extra/wrong typed character = red, missing correct character = green.
+  // 正しい文字は通常色、余分・間違いは赤。
+  // 緑は「入力文字数が正解より少ない」ときの不足文字だけに使う。
   a=String(a); b=String(b);
   const al=a.toLowerCase(), bl=b.toLowerCase();
-  const m=al.length,n=bl.length;
-  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
-  for(let i=m;i>=0;i--) for(let j=n;j>=0;j--){
-    if(i===m) dp[i][j]=n-j;
-    else if(j===n) dp[i][j]=m-i;
-    else if(al[i]===bl[j]) dp[i][j]=dp[i+1][j+1];
-    else dp[i][j]=1+Math.min(dp[i+1][j],dp[i][j+1],dp[i+1][j+1]);
+  const m=al.length, n=bl.length;
+  const shorter = m < n;
+  const longer = m > n;
+
+  const dp=Array.from({length:m+1},()=>Array(n+1).fill(Infinity));
+  dp[m][n]=0;
+  for(let i=m;i>=0;i--){
+    for(let j=n;j>=0;j--){
+      if(i===m && j===n) continue;
+      let best=Infinity;
+      if(i<m && j<n){
+        best=Math.min(best,(al[i]===bl[j]?0:1)+dp[i+1][j+1]);
+      }
+      // 入力の余分な文字は、入力文字数が正解より多い場合だけ赤で削除。
+      if(longer && i<m) best=Math.min(best,1+dp[i+1][j]);
+      // 足りない文字は、入力文字数が正解より少ない場合だけ緑で追加。
+      if(shorter && j<n) best=Math.min(best,1+dp[i][j+1]);
+      dp[i][j]=best;
+    }
   }
+
   let out="",i=0,j=0;
   while(i<m || j<n){
     if(i<m && j<n && al[i]===bl[j] && dp[i][j]===dp[i+1][j+1]){
       out+=`<span class="same">${escape(a[i])}</span>`; i++; j++; continue;
     }
-    // Prefer an actual extra/missing character over a substitution when tied.
-    // Example: stte -> state => st[a]te, with the missing "a" shown in green.
-    if(i<m && dp[i][j]===dp[i+1][j]+1){
+    if(i<m && j<n && dp[i][j]===1+dp[i+1][j+1]){
+      out+=`<span class="wrong">${escape(a[i])}</span>`; i++; j++; continue;
+    }
+    if(longer && i<m && dp[i][j]===1+dp[i+1][j]){
       out+=`<span class="wrong">${escape(a[i])}</span>`; i++; continue;
     }
-    if(j<n && dp[i][j]===dp[i][j+1]+1){
+    if(shorter && j<n && dp[i][j]===1+dp[i][j+1]){
       out+=`<span class="missing">${escape(b[j])}</span>`; j++; continue;
     }
-    if(i<m && j<n){
-      out+=`<span class="wrong">${escape(a[i])}</span><span class="missing">${escape(b[j])}</span>`; i++; j++; continue;
-    }
+    // 念のための終端処理。
     if(i<m){out+=`<span class="wrong">${escape(a[i])}</span>`;i++;}
     else if(j<n){out+=`<span class="missing">${escape(b[j])}</span>`;j++;}
   }
