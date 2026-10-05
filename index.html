@@ -221,6 +221,7 @@ function checkAnswer(choiceIndex=null,isNone=false){
   const noneNote=(!ok && quiz.noneCorrect && !isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
   box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="muted">調子 ${rec.before} → ${rec.after}</div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
   document.getElementById("nextBtn").onclick=nextQuestion;
+  if(mode==="spell" && window.matchMedia("(max-width: 700px)").matches){setTimeout(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}
 }
 function diffHtml(a,b){
   // 正しい文字は通常色、余分・間違いは赤。
