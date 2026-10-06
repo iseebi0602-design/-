@@ -309,7 +309,7 @@ function renderReview(){
   if(mode==="spell")answerArea=`<input id="ans" class="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="英語を入力">`;
   else{const made=makeChoices(w,mode==="jp5"?"jp":"en");quiz.choices=made.choices;quiz.noneCorrect=made.noneCorrect;answerArea=`<div class="choices">${made.choices.map((x,i)=>`<button class="choice" data-i="${i}"><kbd>${i+1}</kbd>${escape(mode==="jp5"?x.jp:x.en)}</button>`).join("")}<button class="choice noneChoice" data-none="1"><kbd>5</kbd>「この中にはない」</button></div>`}
   document.getElementById("quizScreen").innerHTML=`<div class="panel"><div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div><div class="questionCard"><div class="qLabel">復習・${modeLabel(mode)}</div><div class="question">${escape(mode==="spell"||mode==="en5"?w.jp:w.en)}</div><div class="conditionNow">学習記録 ${quiz.noRecord?"反映なし":"反映あり"}</div></div><div class="answerArea">${answerArea}<div id="resultBox"></div></div></div>`;
-  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").onkeydown=e=>{if(e.key==="Enter")checkReview()}}
+  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkReview()}}}
   else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkReview(4,true):checkReview(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
 }
@@ -331,7 +331,7 @@ function checkReview(i=null,isNone=false){
   quiz.answered=true;
   quiz.session.push({word:w,ok});
   if(!ok)quiz.mistakes.push(w);
-  const answerText=w.en;
+  const answerText=mode==="jp5"?w.jp:w.en;
   const noneNote=(!ok&&quiz.noneCorrect&&!isNone)?`<div class="noneResult">正解は「この中にはない」です</div>`:"";
   const afterCond=quiz.noRecord?beforeCond:(ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5));
   const screen=document.getElementById("quizScreen");
@@ -491,7 +491,26 @@ async function renderAdmin(){
   };
   el.querySelectorAll(".deleteDataset").forEach(b=>b.onclick=()=>deleteDatasetAdmin(b.dataset.id));
 }
-async function publishCurrentVocabulary(){const msg=document.getElementById("wordAdminMsg");msg.textContent="公開中…";try{const words=current().words;for(let i=0;i<words.length;i+=400){const chunk=words.slice(i,i+400).map(w=>({dataset_id:currentDataset,word_no:w.no,en:w.en,jp:w.jp,exp:w.exp||"",active:true,updated_at:new Date().toISOString()}));await sbFetch("vocabulary?on_conflict=dataset_id,word_no",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(chunk)})}msg.textContent=`${words.length}語をサーバーへ公開しました。`;logAdminAction("vocabulary_publish",{count:words.length})}catch(e){msg.textContent="公開に失敗しました。";console.error(e)}}
+async function publishCurrentVocabulary(){
+  const msg=document.getElementById("wordAdminMsg");
+  if(msg)msg.textContent="公開中…";
+  try{
+    const d=current(), words=d?.words||[];
+    if(!words.length)throw Error("単語がありません。");
+    for(let i=0;i<words.length;i+=400){
+      const chunk=words.slice(i,i+400).map(w=>({dataset_id:currentDataset,word_no:Number(w.no),en:String(w.en||"").trim(),jp:String(w.jp||"").trim(),exp:String(w.exp||""),active:true,updated_at:new Date().toISOString()}));
+      await sbFetch("vocabulary?on_conflict=dataset_id,word_no",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(chunk)});
+    }
+    const check=await sbFetch("vocabulary?select=word_no&dataset_id=eq."+encodeURIComponent(currentDataset)+"&active=eq.true&limit=1");
+    if(!Array.isArray(check)||!check.length)throw Error("公開後の確認で単語が取得できませんでした。RLSまたはGRANT設定を確認してください。");
+    if(msg)msg.textContent=`${words.length}語をサーバーへ公開しました。`;
+    await logAdminAction("vocabulary_publish",{dataset_id:currentDataset,count:words.length});
+  }catch(e){
+    const detail=e?.message||String(e);
+    if(msg)msg.textContent="公開に失敗しました。"+detail;
+    console.error("publishCurrentVocabulary",e);
+  }
+}
 async function editVocabulary(no){const w=current().words.find(x=>x.no===no);if(!w)return alert("その番号の単語がありません。");adminModal(`No.${no}を編集`,`<div class="field"><label>英語</label><input id="amEn" value="${escape(w.en)}" style="width:100%"></div><div class="field"><label>日本語</label><textarea id="amJp" rows="3" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:10px">${escape(w.jp)}</textarea></div><div class="field"><label>解説</label><textarea id="amExp" rows="3" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:10px">${escape(w.exp||"")}</textarea></div>`,async()=>{const payload={dataset_id:currentDataset,word_no:no,en:document.getElementById("amEn").value.trim(),jp:document.getElementById("amJp").value.trim(),exp:document.getElementById("amExp").value.trim(),active:true,updated_at:new Date().toISOString()};await sbFetch("vocabulary?on_conflict=dataset_id,word_no",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(payload)});w.en=payload.en;w.jp=payload.jp;w.exp=payload.exp;saveDB();logAdminAction("vocabulary_edit",{word_no:no})});}
 async function logAdminAction(action,detail){try{await sbFetch("admin_audit_logs",{method:"POST",body:JSON.stringify({admin_user_id:auth.user.id,action,detail:detail||{}})})}catch(e){}}
 async function recordVisit(){try{let key=localStorage.getItem("rhythm_visitor_key");if(!key){key=uid();localStorage.setItem("rhythm_visitor_key",key)}await sbFetch("site_visits",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify({visitor_key:key,user_id:auth?.user?.id||null,user_agent:navigator.userAgent.slice(0,300)})})}catch(e){}}
@@ -615,7 +634,6 @@ recordVisit();
 if(auth?.access_token) checkAdmin().then(()=>{});
 (async()=>{await loadPublicVocabulary();if(auth?.access_token)await cloudLoadStats();render()})().catch(()=>render());
 document.addEventListener("keydown",e=>{
-  // Result screen shortcuts: Enter starts mistake review, Escape returns to settings.
   if(quiz && quiz.ended && !quiz.active){
     const review=document.getElementById("reviewBtn"), back=document.getElementById("backBtn");
     if(e.key==="Enter" && review){e.preventDefault();review.click();return}
@@ -628,12 +646,30 @@ document.addEventListener("keydown",e=>{
     if(start&&e.key==="Enter"&&!/^(INPUT|SELECT|TEXTAREA)$/.test(tag)){e.preventDefault();start.click();}
     return;
   }
-  // Escape ends a live quiz. Space is intentionally left free for spelling input.
   if(e.key==="Escape"){e.preventDefault();quiz=null;renderQuiz();return}
-  if(quiz.answered){if(e.key==="Enter"){e.preventDefault();if(quiz.review){quiz.index++;quiz.answered=false;renderReview()}else nextQuestion()}return;}
+
+  // 復習モードは通常問題の判定処理に流さない。
+  // ここが以前の不具合の原因で、スペル入力のEnter後に
+  // document側のEnter処理が走って結果画面を即座に次の問題へ進めていた。
+  if(quiz.review){
+    if(quiz.answered){
+      if(e.key==="Enter"){e.preventDefault();quiz.index++;quiz.answered=false;renderReview();}
+      return;
+    }
+    if(["1","2","3","4"].includes(e.key)&&quiz.currentMode!=="spell"){
+      e.preventDefault();
+      const i=+e.key-1;
+      if(quiz.choices?.[i])checkReview(i,false);
+    }
+    if(e.key==="5"&&quiz.currentMode!=="spell"){e.preventDefault();checkReview(4,true);}
+    return;
+  }
+
+  if(quiz.answered){if(e.key==="Enter"){e.preventDefault();nextQuestion()}return;}
   if(["1","2","3","4"].includes(e.key)&&quiz.currentMode!=="spell"){const i=+e.key-1;if(quiz.choices?.[i])checkAnswer(i,false);}
   if(e.key==="5"&&quiz.currentMode!=="spell"){e.preventDefault();checkAnswer(4,true)}
 });
+
 /*
 Supabase SQL (第3回版)
 既存 word_stats を拡張:
