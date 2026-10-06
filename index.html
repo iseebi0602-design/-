@@ -322,8 +322,13 @@ function checkReview(i=null,isNone=false){
   if(!quiz.noRecord)record(w.no,ok,ok?5:-5);
   quiz.answered=true;quiz.session.push({word:w,ok});
   if(!ok)quiz.mistakes.push(w);
-  const answerText=mode==="jp5"?w.jp:w.en; const noneNote=(!ok&&quiz.noneCorrect&&!isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
-  const afterCond=quiz.noRecord?beforeCond:(ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5)); document.getElementById("resultBox").innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  const answerText=mode==="jp5"?w.jp:w.en; const noneNote=(!ok&&quiz.noneCorrect&&!isNone)?`<div class="noneResult">正解は「この中にはない」です</div>`:"";
+  const afterCond=quiz.noRecord?beforeCond:(ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5));
+  // 「間違えた問題を解く」でも、通常問題と同じ正誤結果を必ず表示する
+  const resultBox=document.getElementById("resultBox");
+  resultBox.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  // 選択肢は判定後に操作できないようにする
+  document.querySelectorAll(".choice").forEach(b=>b.disabled=true);
   document.getElementById("nextBtn").onclick=()=>{quiz.index++;quiz.answered=false;renderReview()};
   if(mode==="spell" && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
