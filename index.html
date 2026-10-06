@@ -87,8 +87,25 @@ let db=loadDB(), currentDataset=db.currentDataset, quiz=null;
 function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
 function datasetHash(text){let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)}
 function loadDB(){
-  try{const x=JSON.parse(localStorage.getItem(KEY)||""); if(x&&x.datasets)return x}catch(e){}
   const id="leap-default";
+  try{
+    const x=JSON.parse(localStorage.getItem(KEY)||"");
+    if(x&&x.datasets){
+      // 以前の保存データでLeap単語帳が空になっていても、内蔵2300語を復元する。
+      if(!x.datasets[id] || !Array.isArray(x.datasets[id].words) || x.datasets[id].words.length===0){
+        const oldStats=x.datasets[id]?.stats||{};
+        x.datasets[id]={id,name:"Leap単語帳",words:DEFAULT_WORDS,stats:oldStats};
+      }
+      // Leap単語帳が存在する場合も、2300語未満なら内蔵データを優先して復元する。
+      if(x.datasets[id].words.length!==DEFAULT_WORDS.length){
+        const oldStats=x.datasets[id].stats||{};
+        x.datasets[id]={id,name:"Leap単語帳",words:DEFAULT_WORDS,stats:oldStats};
+      }
+      if(!x.datasets[x.currentDataset]) x.currentDataset=id;
+      x.settings=x.settings||{fromNo:1,toNo:Math.min(100,DEFAULT_WORDS.length),count:20,mode:"spell",stateFilter:"all"};
+      return x;
+    }
+  }catch(e){}
   return {currentDataset:id,datasets:{[id]:{id,name:"Leap単語帳",words:DEFAULT_WORDS,stats:{}}},settings:{fromNo:1,toNo:Math.min(100,DEFAULT_WORDS.length),count:20,mode:"spell",stateFilter:"all"}};
 }
 function saveDB(){localStorage.setItem(KEY,JSON.stringify(db))}
