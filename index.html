@@ -39,6 +39,27 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
   .wordRow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;grid-template-areas:"num en status" "num jp status" "num recent condition";align-items:center;gap:3px 8px;padding:11px 10px;min-height:76px}
   .wordRow .num{grid-area:num;align-self:start;padding-top:2px}.wordRow .en{grid-area:en;font-size:16px;min-width:0}.wordRow .jp{grid-area:jp;min-width:0;font-size:13px;line-height:1.45}.wordRow .status{grid-area:status;align-self:start}.wordRow .recent{grid-area:recent}.wordRow .condition{grid-area:condition;justify-self:end;font-size:12px}.datasetAdminRow{align-items:flex-start;flex-direction:column}.datasetAdminRow .adminActions{width:100%}.datasetAdminRow .adminActions button{flex:1}.result{scroll-margin-top:12px}
 }
+
+/* iPad/tablet wordbook layout: keep all learning info separated */
+@media (min-width:721px) and (max-width:1180px){
+  .wordRow{
+    grid-template-columns:48px minmax(0,1fr) auto;
+    grid-template-areas:"num en status"
+                         "num jp status"
+                         "num recent condition";
+    align-items:center;
+    gap:4px 12px;
+    padding:12px 14px;
+    min-height:82px;
+  }
+  .wordRow .num{grid-area:num;align-self:start;padding-top:2px}
+  .wordRow .en{grid-area:en;min-width:0;font-size:16px;overflow-wrap:anywhere}
+  .wordRow .jp{grid-area:jp;min-width:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+  .wordRow .status{grid-area:status;align-self:start;justify-self:end}
+  .wordRow .recent{grid-area:recent;font-size:12px;min-width:0}
+  .wordRow .condition{grid-area:condition;justify-self:end;font-size:13px;white-space:nowrap}
+  .wordRow .statusBadge{font-size:12px}
+}
 </style>
 </head>
 <body>
