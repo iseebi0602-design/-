@@ -318,11 +318,12 @@ function checkReview(i=null,isNone=false){
   const item=quiz.queue[quiz.index],w=item.word,mode=item.mode;
   let ok=false,user="";
   if(mode==="spell"){user=document.getElementById("ans").value.trim();ok=user.toLowerCase()===w.en.toLowerCase()}else if(isNone){user="この中にはない";ok=!!quiz.noneCorrect}else{user=quiz.choices[i]?.en||"";ok=!quiz.noneCorrect && quiz.choices[i]?.no===w.no}
+  const beforeCond=stat(w.no).cond;
   if(!quiz.noRecord)record(w.no,ok,ok?5:-5);
   quiz.answered=true;quiz.session.push({word:w,ok});
   if(!ok)quiz.mistakes.push(w);
   const answerText=mode==="jp5"?w.jp:w.en; const noneNote=(!ok&&quiz.noneCorrect&&!isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
-  const beforeCond=stat(w.no).cond; const afterCond=ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5); document.getElementById("resultBox").innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  const afterCond=quiz.noRecord?beforeCond:(ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5)); document.getElementById("resultBox").innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
   document.getElementById("nextBtn").onclick=()=>{quiz.index++;quiz.answered=false;renderReview()};
   if(mode==="spell" && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
