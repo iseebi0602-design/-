@@ -111,7 +111,15 @@ function loadDB(){
 function saveDB(){localStorage.setItem(KEY,JSON.stringify(db))}
 function getSettings(){db.settings=db.settings||{};return db.settings}
 function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;saveDB()}
-function current(){return db.datasets[currentDataset]||Object.values(db.datasets)[0]}
+function current(){
+  let d=db.datasets[currentDataset];
+  if(!d || !Array.isArray(d.words) || d.words.length===0){
+    currentDataset="leap-default";
+    db.currentDataset=currentDataset;
+    d=db.datasets[currentDataset];
+  }
+  return d||{id:"leap-default",name:"Leap単語帳",words:DEFAULT_WORDS,stats:{}};
+}
 function ensureStats(s){
   if(!s.stats) s.stats={};
   return s.stats;
