@@ -32,6 +32,13 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
 @media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.wordRow{grid-template-columns:42px 1fr 1fr 55px}.wordRow .stat,.wordRow .condition{font-size:11px}.sessionGrid{grid-template-columns:1fr 1fr}.questionCard{padding-top:20px}.question{font-size:34px}}
 @media(max-width:450px){.grid{grid-template-columns:1fr}.wordRow{grid-template-columns:38px 1fr 1fr}.wordRow .status{display:block}.choices{gap:8px}.choice{min-height:60px;padding:9px;font-size:14px}.nav button{padding:7px 6px}.logo{font-size:16px}}
 .wordRow{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;border:0;border-bottom:1px solid var(--line);background:transparent;display:grid;grid-template-columns:60px minmax(130px,1fr) minmax(180px,1.5fr) 38px 120px 80px;gap:8px;align-items:center;padding:11px 8px;min-height:54px}.wordRow:hover{background:var(--hover)}@media(max-width:720px){.wordRow{grid-template-columns:44px 1fr 42px;gap:6px}.wordRow .jp{grid-column:2/-1}.wordRow .stat{display:none}.wordRow .condition{grid-column:2/-1}.wordRow .en{min-width:0;overflow-wrap:anywhere}}
+
+/* 第11回修正: 単語帳・解説・直近・管理者削除 */
+.correctLabel,.diffLabel{font-size:12px;color:var(--muted);font-weight:750;margin-top:10px}.explanation{margin-top:14px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--bg);line-height:1.65;overflow-wrap:anywhere}.explanationTitle{font-weight:850;margin-bottom:5px}.retention{margin-top:12px;padding:9px 12px;border-radius:10px;background:var(--bg);display:flex;justify-content:center;gap:10px;align-items:center}.retention b{font-size:17px}.recent{font-size:11px;color:var(--muted);white-space:nowrap}.recentLabel{margin-right:3px}.recentDots i{font-style:normal;font-weight:800;margin-right:2px}.recentDots .rGood{color:var(--good)}.recentDots .rBad{color:var(--bad)}.datasetAdminList{display:grid;gap:8px}.datasetAdminRow{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;padding:10px 12px}.datasetAdminRow>div:first-child{min-width:0}.datasetAdminRow .adminActions{justify-content:flex-end}.wordRow .statusBadge{justify-self:start}.wordRow .condition b{font-size:14px;color:var(--text)}
+@media(max-width:720px){
+  .wordRow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;grid-template-areas:"num en status" "num jp status" "num recent condition";align-items:center;gap:3px 8px;padding:11px 10px;min-height:76px}
+  .wordRow .num{grid-area:num;align-self:start;padding-top:2px}.wordRow .en{grid-area:en;font-size:16px;min-width:0}.wordRow .jp{grid-area:jp;min-width:0;font-size:13px;line-height:1.45}.wordRow .status{grid-area:status;align-self:start}.wordRow .recent{grid-area:recent}.wordRow .condition{grid-area:condition;justify-self:end;font-size:12px}.datasetAdminRow{align-items:flex-start;flex-direction:column}.datasetAdminRow .adminActions{width:100%}.datasetAdminRow .adminActions button{flex:1}.result{scroll-margin-top:12px}
+}
 </style>
 </head>
 <body>
@@ -62,11 +69,11 @@ function datasetHash(text){let h=2166136261;for(let i=0;i<text.length;i++){h^=te
 function loadDB(){
   try{const x=JSON.parse(localStorage.getItem(KEY)||""); if(x&&x.datasets)return x}catch(e){}
   const id="leap-default";
-  return {currentDataset:id,datasets:{[id]:{id,name:"Leap単語帳",words:DEFAULT_WORDS,stats:{}}},settings:{fromNo:1,toNo:Math.min(100,DEFAULT_WORDS.length),count:20,mode:"spell",stateFilter:"all",priority:"normal",jpTrack:"off"}};
+  return {currentDataset:id,datasets:{[id]:{id,name:"Leap単語帳",words:DEFAULT_WORDS,stats:{}}},settings:{fromNo:1,toNo:Math.min(100,DEFAULT_WORDS.length),count:20,mode:"spell",stateFilter:"all"}};
 }
 function saveDB(){localStorage.setItem(KEY,JSON.stringify(db))}
 function getSettings(){db.settings=db.settings||{};return db.settings}
-function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;s.priority=document.getElementById("priority").value;s.jpTrack=document.getElementById("jpTrack").value;saveDB()}
+function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;saveDB()}
 function current(){return db.datasets[currentDataset]||Object.values(db.datasets)[0]}
 function ensureStats(s){
   if(!s.stats) s.stats={};
@@ -124,35 +131,19 @@ function renderQuiz(){
           <div class="grid" style="margin-top:10px">
             <div class="field"><label>出題モード</label><select id="mode"><option value="spell">スペル入力</option><option value="jp5">日本語5択</option><option value="en5">英語5択</option><option value="mix">ミックス</option></select></div>
             <div class="field"><label>学習状態</label><select id="stateFilter"><option value="all">すべて</option><option value="unlearned">？ 未学習</option><option value="good">◎ 定着</option><option value="stable">○ 安定</option><option value="warn">△ 要注意</option><option value="weak">× 苦手</option></select></div>
-            <div class="field"><label>出題優先</label><select id="priority"><option value="normal">通常</option><option value="weak">苦手優先</option><option value="recent">最近間違えた優先</option></select></div>
-            <div class="field"><label>日本語理解トラック</label><select id="jpTrack"><option value="off">通常</option><option value="on">1001〜2300は日本語重視</option></select></div>
+            
           </div>
           <div id="quizAdminComment"></div><button id="startBtn" class="primary" style="margin-top:12px">開始 (Enter)</button>
         </div>
       </details>
     </div>`;
   const ps=getSettings();
-  ["mode","stateFilter","priority","jpTrack"].forEach(id=>{const el=document.getElementById(id);if(ps[id]!=null)el.value=ps[id]});
+  ["mode","stateFilter"].forEach(id=>{const el=document.getElementById(id);if(ps[id]!=null)el.value=ps[id]});
   document.getElementById("setSelect").onchange=e=>{currentDataset=e.target.value;db.currentDataset=currentDataset;saveDB();renderQuiz()};
-  ["fromNo","toNo","count","mode","stateFilter","priority","jpTrack"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
+  ["fromNo","toNo","count","mode","stateFilter"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
   document.getElementById("startBtn").onclick=startQuiz;
   loadNotices().then(notices=>{const box=document.getElementById("noticeBoard");if(!box)return;box.innerHTML=notices.length?notices.map(n=>`<details class="noticeCard"><summary>${escape(n.title)} <span class="tag">${escape(n.kind||"通常")}</span></summary><div class="noticeBody">${escape(n.body)}</div></details>`).join(""):"<div class=\"empty\">お知らせはありません。</div>"}).catch(()=>{});
   loadPublicComment().then(x=>{const box=document.getElementById("quizAdminComment");if(x)box.innerHTML=`<div class="commentCard"><div class="commentTitle">管理者からのコメント</div><div>${escape(x.body)}</div></div>`}).catch(()=>{});
-}
-function weightedPick(pool,n,priority){
-  if(priority==="normal")return shuffle(pool).slice(0,n);
-  const scored=pool.map(w=>{
-    const v=stat(w.no), weak=(100-(v.cond??50))/100, rw=recentWrong(v)/4;
-    const weight=priority==="weak"?1+5*weak:1+5*rw;
-    return {w,weight};
-  });
-  const out=[], bag=[...scored];
-  while(out.length<n&&bag.length){
-    let total=bag.reduce((a,x)=>a+x.weight,0), r=Math.random()*total, idx=0;
-    for(;idx<bag.length;idx++){r-=bag[idx].weight;if(r<=0)break}
-    out.push(bag[idx].w);bag.splice(idx,1);
-  }
-  return out;
 }
 function makeChoices(w,field){
   const words=current().words.filter(x=>x.no!==w.no);
@@ -169,24 +160,22 @@ function startQuiz(){
   if(!pool.length){alert("条件に合う単語がありません。");return}
   const n=Math.min(+document.getElementById("count").value||20,pool.length);
   saveSettingsFromUI();
-  let mode=document.getElementById("mode").value, priority=document.getElementById("priority").value;
-  const jpTrack=document.getElementById("jpTrack").value==="on";
-  const selected=weightedPick(pool,n,priority);
-  quiz={active:true,queue:selected,index:0,mode, jpTrack, answered:false,session:[],mistakes:[],mixModes:buildMixModes(n,jpTrack,selected)};
+  let mode=document.getElementById("mode").value;
+  const selected=shuffle(pool).slice(0,n);
+  quiz={active:true,queue:selected,index:0,mode,answered:false,session:[],mistakes:[],mixModes:buildMixModes(n,selected)};
   renderQuiz();
 }
-function buildMixModes(n,jpTrack,selected){
+function buildMixModes(n,selected){
   const base=["spell","jp5","en5"];
   const out=[];
   for(let i=0;i<n;i++) out.push(base[i%3]);
-  return shuffle(out).map((m,i)=>{const w=selected[i]; if(jpTrack&&w.no>=1001&&Math.random()<0.72)return "jp5"; return m;});
+  return shuffle(out);
 }
 function renderQuizActive(el){
   if(quiz.index>=quiz.queue.length){finishSession();return}
   const w=quiz.queue[quiz.index], v=stat(w.no);
   let mode=quiz.mode;
   if(mode==="mix") mode=quiz.mixModes?.[quiz.index]||"spell";
-  if(quiz.jpTrack && w.no>=1001 && mode!=="jp5" && Math.random()<0.72) mode="jp5";
   quiz.currentMode=mode;
   const q=mode==="spell"||mode==="en5"?w.jp:w.en;
   let answerArea="";
@@ -221,8 +210,9 @@ function checkAnswer(choiceIndex=null,isNone=false){
   const box=document.getElementById("resultBox");
   const answerText=mode==="jp5"?w.jp:w.en;
   const noneNote=(!ok && quiz.noneCorrect && !isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
-  box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="muted">定着度 ${rec.before} → ${rec.after}</div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="explanation"><div class="explanationTitle">解説</div><div>${escape(w.exp||"解説は登録されていません。")}</div></div><div class="retention"><span>定着度</span><b>${rec.before} → ${rec.after}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
   document.getElementById("nextBtn").onclick=nextQuestion;
+  if(mode==="spell" && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
 function diffHtml(a,b){
   // 正しい文字は通常色、余分・間違いは赤。
@@ -312,8 +302,9 @@ function checkReview(i=null,isNone=false){
   quiz.answered=true;quiz.session.push({word:w,ok});
   if(!ok)quiz.mistakes.push(w);
   const answerText=mode==="jp5"?w.jp:w.en; const noneNote=(!ok&&quiz.noneCorrect&&!isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
-  document.getElementById("resultBox").innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctAnswer">${escape(answerText)}</div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  const beforeCond=stat(w.no).cond; const afterCond=ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5); document.getElementById("resultBox").innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="explanation"><div class="explanationTitle">解説</div><div>${escape(w.exp||"解説は登録されていません。")}</div></div><div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
   document.getElementById("nextBtn").onclick=()=>{quiz.index++;quiz.answered=false;renderReview()};
+  if(mode==="spell" && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
 function finishReview(){
   const r=quiz,el=document.getElementById("quizScreen");
@@ -328,7 +319,7 @@ function renderBook(){
   const groups=[];for(let start=1;start<=d.words.length;start+=100)groups.push(d.words.filter(w=>w.no>=start&&w.no<start+100));
   el.innerHTML=`<div class="panel"><h1>単語帳</h1>
   <div class="datasetTabs">${Object.values(db.datasets).map(x=>`<button class="datasetTab ${x.id===currentDataset?"active":""}" data-id="${x.id}">${escape(x.name)}</button>`).join("")}</div>
-  <div class="toolbar" style="margin-top:10px"><input id="search" placeholder="英語・日本語・番号で検索"><select id="bookFilter"><option value="all">すべて</option><option value="unlearned">？ 未学習</option><option value="good">◎ 定着</option><option value="stable">○ 安定</option><option value="warn">△ 要注意</option><option value="weak">× 苦手</option></select><select id="bookSort"><option value="no">番号順</option><option value="condition">定着度が低い順</option><option value="recent">最近の間違い順</option><option value="priority">出題優先度順</option></select><button id="addCsv" class="secondary">CSV追加</button><input id="csvFile" class="fileInput" type="file" accept=".csv,text/csv"></div>
+  <div class="toolbar" style="margin-top:10px"><input id="search" placeholder="英語・日本語・番号で検索"><select id="bookFilter"><option value="all">すべて</option><option value="unlearned">？ 未学習</option><option value="good">◎ 定着</option><option value="stable">○ 安定</option><option value="warn">△ 要注意</option><option value="weak">× 苦手</option></select><select id="bookSort"><option value="no">番号順</option><option value="condition">定着度が低い順</option><option value="recent">直近の間違い順</option></select><button id="addCsv" class="secondary">CSV追加</button><input id="csvFile" class="fileInput" type="file" accept=".csv,text/csv"></div>
   <div id="bookComment"></div><div class="wordGroups">${groups.map((g,gi)=>{const c=groupCounts(g);return `<details class="group" ${gi===0?"open":""}><summary><span class="groupSummary"><span>${g[0].no}〜${g[g.length-1].no}</span><span class="groupCounts">${statusBadge("◎",c["◎"])}${statusBadge("○",c["○"])}${statusBadge("△",c["△"])}${statusBadge("×",c["×"])}${statusBadge("？",c["？"])}</span></span></summary><div class="wordList">${g.map(w=>wordRow(w)).join("")}</div></details>`}).join("")}</div>
   <div class="dataActions"><button id="clearStats" class="danger">この単語帳の学習記録をリセット</button></div></div>`;
   el.querySelectorAll(".datasetTab").forEach(b=>b.onclick=()=>{currentDataset=b.dataset.id;db.currentDataset=currentDataset;saveDB();render()});
@@ -342,7 +333,7 @@ function renderBook(){
   loadPublicComment().then(x=>{if(x)document.getElementById("bookComment").innerHTML=`<div class="commentCard"><div class="commentTitle">管理者からのコメント</div><div>${escape(x.body)}</div></div>`}).catch(()=>{});
   apply();
 }
-function wordRow(w){const v=stat(w.no),st=stateOf(v);return `<button class="wordRow" type="button" data-no="${w.no}"><span class="num">${w.no}</span><span class="en">${escape(w.en)}</span><span class="jp">${escape(w.jp)}</span><span class="status">${statusBadge(st)}</span><span class="stat">直近 ${(v.recent||[]).filter(Boolean).length}/${(v.recent||[]).length||0}</span><span class="condition">定着度 ${v.cond}</span></button>`}
+function wordRow(w){const v=stat(w.no),st=stateOf(v),r=(v.recent||[]).slice(-4);return `<button class="wordRow" type="button" data-no="${w.no}"><span class="num">${w.no}</span><span class="en">${escape(w.en)}</span><span class="jp">${escape(w.jp)}</span><span class="status">${statusBadge(st)}</span><span class="recent"><span class="recentLabel">直近</span> <span class="recentDots">${r.length?r.map(x=>`<i class="${x?"rGood":"rBad"}">${x?"○":"×"}</i>`).join(""):"—"}</span><span class="condition">定着度 <b>${v.cond}</b></span></button>`;}
 
 function startSingleWord(no){
   const w=current().words.find(x=>x.no===no);if(!w)return;
@@ -384,6 +375,25 @@ async function loadAdminStats(){
 function adminModal(title,body,onSave){const old=document.getElementById("adminModal");if(old)old.remove();const d=document.createElement("div");d.id="adminModal";d.innerHTML=`<div style="position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:9999;padding:15px"><div class="panel" style="width:min(620px,100%);max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center"><h2>${title}</h2><button id="amClose" class="secondary">閉じる</button></div>${body}<div class="dataActions"><button id="amSave" class="primary">保存</button></div><div id="amMsg" class="muted"></div></div></div>`;document.body.appendChild(d);document.getElementById("amClose").onclick=()=>d.remove();document.getElementById("amSave").onclick=async()=>{const msg=document.getElementById("amMsg");msg.textContent="保存中…";try{await onSave(d);msg.textContent="保存しました。";setTimeout(()=>d.remove(),350);renderAdmin()}catch(e){msg.textContent=e.message||"保存に失敗しました。"}}}
 async function saveNotice(id){const title=document.getElementById("amTitle").value.trim(),body=document.getElementById("amBody").value.trim(),kind=document.getElementById("amKind").value,published=document.getElementById("amPub").checked;if(!title||!body)throw Error("タイトルと本文を入力してください。");const payload={title,body,kind,published,updated_at:new Date().toISOString()};if(id)await sbFetch("site_announcements?id=eq."+id,{method:"PATCH",body:JSON.stringify(payload)});else await sbFetch("site_announcements",{method:"POST",body:JSON.stringify(payload)})}
 async function editNotice(n){adminModal(n?"お知らせを編集":"お知らせを追加",`<div class="field"><label>タイトル</label><input id="amTitle" value="${escape(n?.title||"")}" style="width:100%"></div><div class="field"><label>本文</label><textarea id="amBody" rows="7" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:10px">${escape(n?.body||"")}</textarea></div><div class="field"><label>種類</label><select id="amKind"><option>通常</option><option>テスト</option><option>更新</option><option>重要</option></select></div><label><input id="amPub" type="checkbox" ${n?.published!==false?"checked":""}> 公開する</label>`,async()=>saveNotice(n?.id))}
+async function deleteDatasetAdmin(id){
+  const d=db.datasets[id]; if(!d) return;
+  const ok=confirm(`「${d.name}」を単語帳ごと削除します。\n\nこの端末の単語帳データと学習記録を削除し、公開済みのサーバー単語帳も削除します。\nこの操作は取り消せません。`);
+  if(!ok)return;
+  const msg=document.getElementById("wordAdminMsg"); if(msg)msg.textContent="削除中…";
+  try{
+    if(auth?.access_token){
+      await sbFetch("vocabulary?dataset_id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{"Prefer":"return=minimal"}});
+      await sbFetch("admin_comments?dataset_id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{"Prefer":"return=minimal"}});
+      await logAdminAction("dataset_delete",{dataset_id:id,name:d.name});
+    }
+    delete db.datasets[id];
+    const ids=Object.keys(db.datasets);
+    if(!ids.length){const nid="leap-default";db.datasets[nid]={id:nid,name:"Leap単語帳",words:DEFAULT_WORDS,stats:{}};}
+    if(currentDataset===id){currentDataset=Object.keys(db.datasets)[0];db.currentDataset=currentDataset;}
+    saveDB();
+    render(); renderAdmin();
+  }catch(e){if(msg)msg.textContent="削除に失敗しました: "+(e.message||e);}
+}
 async function renderAdmin(){
   if(!isAdmin){document.getElementById("adminScreen").innerHTML=`<div class="panel"><h1>管理者</h1><p>管理者権限が必要です。</p></div>`;return}
   const el=document.getElementById("adminScreen");
@@ -393,7 +403,7 @@ async function renderAdmin(){
   el.innerHTML=`<div class="panel"><h1>管理者</h1><p class="muted">サイト運営用の管理画面です。</p><div class="adminGrid"><div class="adminStat">今日の訪問者<b>${stats.visitorsToday}</b></div><div class="adminStat">過去7日の訪問者<b>${stats.visitorsWeek}</b></div><div class="adminStat">学習記録のあるユーザー<b>${stats.activeUsers}</b></div><div class="adminStat">管理対象単語帳<b>${Object.keys(db.datasets).length}</b></div></div>
 <details class="drawer" open><summary>お知らせ管理</summary><div class="drawerBody"><button id="newNotice" class="primary">＋ 新しいお知らせ</button>${noticeHtml}</div></details>
 <details class="drawer"><summary>管理者コメント</summary><div class="drawerBody"><p class="muted">問題設定・単語帳に表示するコメントです。</p><textarea id="adminComment" rows="4" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:10px" placeholder="学習者へのコメント"></textarea><label><input id="commentPub" type="checkbox" checked> 公開する</label><button id="saveComment" class="primary" style="margin-top:8px">コメントを保存</button></div></details>
-<details class="drawer"><summary>単語帳管理</summary><div class="drawerBody"><p class="muted">現在の単語帳をサーバーへ公開すると、以後の単語編集をサイト全体に反映できます。</p><div class="adminActions"><button id="publishWords" class="primary">現在の単語帳を公開</button><button id="editWord" class="secondary">単語を編集</button></div><p id="wordAdminMsg" class="muted"></p></div></details>
+<details class="drawer"><summary>単語帳管理</summary><div class="drawerBody"><p class="muted">単語帳の公開・編集・削除を管理します。</p><div class="datasetAdminList">${Object.values(db.datasets).map(d=>`<div class="datasetAdminRow"><div><b>${escape(d.name)}</b><div class="small muted">${d.words.length}語 · ${d.id}</div></div><div class="adminActions"><button class="secondary publishDataset" data-id="${escape(d.id)}">公開</button><button class="secondary editDatasetWord" data-id="${escape(d.id)}">単語編集</button><button class="danger deleteDataset" data-id="${escape(d.id)}">単語帳ごと削除</button></div></div>`).join("")}</div><p id="wordAdminMsg" class="muted"></p></div></details>
 <details class="drawer"><summary>学習統計・苦手単語</summary><div class="drawerBody"><table class="adminTable"><tr><th>単語帳</th><th>番号</th><th>定着度</th><th>回答数</th></tr>${weakHtml}</table></div></details>
 <details class="drawer"><summary>サイト設定・操作履歴</summary><div class="drawerBody"><p class="muted">操作履歴は管理者操作の記録として保存できます。現在は主要な管理機能を優先しています。</p></div></details></div>`;
   document.getElementById("newNotice").onclick=()=>editNotice(null);
@@ -401,8 +411,9 @@ async function renderAdmin(){
   el.querySelectorAll(".delNotice").forEach(b=>b.onclick=async()=>{if(confirm("このお知らせを削除しますか？")){await sbFetch("site_announcements?id=eq."+b.dataset.id,{method:"DELETE"});await logAdminAction("notice_delete",{id:b.dataset.id});renderAdmin()}});
   try{const c=await sbFetch("admin_comments?select=id,body,published&dataset_id=eq."+encodeURIComponent(currentDataset)+"&order=updated_at.desc&limit=1");if(c[0]){document.getElementById("adminComment").value=c[0].body;document.getElementById("commentPub").checked=c[0].published!==false}}catch(e){}
   document.getElementById("saveComment").onclick=async()=>{const body=document.getElementById("adminComment").value.trim();if(!body)return;const pub=document.getElementById("commentPub").checked;const old=await sbFetch("admin_comments?select=id&dataset_id=eq."+encodeURIComponent(currentDataset)+"&limit=1");if(old[0])await sbFetch("admin_comments?id=eq."+old[0].id,{method:"PATCH",body:JSON.stringify({body,published:pub,updated_at:new Date().toISOString()})});else await sbFetch("admin_comments",{method:"POST",body:JSON.stringify({dataset_id:currentDataset,body,published:pub})});await logAdminAction("comment_save",{dataset_id:currentDataset});alert("コメントを保存しました。");renderBook()};
-  document.getElementById("publishWords").onclick=()=>publishCurrentVocabulary();
-  document.getElementById("editWord").onclick=()=>{const no=prompt("編集する単語番号を入力");if(no)editVocabulary(Number(no))};
+  el.querySelectorAll(".publishDataset").forEach(b=>b.onclick=()=>{currentDataset=b.dataset.id;db.currentDataset=currentDataset;saveDB();publishCurrentVocabulary()});
+  el.querySelectorAll(".editDatasetWord").forEach(b=>b.onclick=()=>{currentDataset=b.dataset.id;db.currentDataset=currentDataset;saveDB();const no=prompt("編集する単語番号を入力");if(no)editVocabulary(Number(no))});
+  el.querySelectorAll(".deleteDataset").forEach(b=>b.onclick=()=>deleteDatasetAdmin(b.dataset.id));
 }
 async function publishCurrentVocabulary(){const msg=document.getElementById("wordAdminMsg");msg.textContent="公開中…";try{const words=current().words;for(let i=0;i<words.length;i+=400){const chunk=words.slice(i,i+400).map(w=>({dataset_id:currentDataset,word_no:w.no,en:w.en,jp:w.jp,exp:w.exp||"",active:true,updated_at:new Date().toISOString()}));await sbFetch("vocabulary?on_conflict=dataset_id,word_no",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(chunk)})}msg.textContent=`${words.length}語をサーバーへ公開しました。`;logAdminAction("vocabulary_publish",{count:words.length})}catch(e){msg.textContent="公開に失敗しました。";console.error(e)}}
 async function editVocabulary(no){const w=current().words.find(x=>x.no===no);if(!w)return alert("その番号の単語がありません。");adminModal(`No.${no}を編集`,`<div class="field"><label>英語</label><input id="amEn" value="${escape(w.en)}" style="width:100%"></div><div class="field"><label>日本語</label><textarea id="amJp" rows="3" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:10px">${escape(w.jp)}</textarea></div><div class="field"><label>解説</label><textarea id="amExp" rows="3" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:10px">${escape(w.exp||"")}</textarea></div>`,async()=>{const payload={dataset_id:currentDataset,word_no:no,en:document.getElementById("amEn").value.trim(),jp:document.getElementById("amJp").value.trim(),exp:document.getElementById("amExp").value.trim(),active:true,updated_at:new Date().toISOString()};await sbFetch("vocabulary?on_conflict=dataset_id,word_no",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(payload)});w.en=payload.en;w.jp=payload.jp;w.exp=payload.exp;saveDB();logAdminAction("vocabulary_edit",{word_no:no})});}
