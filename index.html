@@ -108,7 +108,7 @@ function loadDB(){
   }catch(e){}
   return {currentDataset:id,datasets:{[id]:{id,name:"Leap単語帳",words:DEFAULT_WORDS,stats:{}}},settings:{fromNo:1,toNo:Math.min(100,DEFAULT_WORDS.length),count:20,mode:"spell",stateFilter:"all"}};
 }
-function saveDB(){localStorage.setItem(KEY,JSON.stringify(db))}
+function saveDB(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){console.warn("saveDB",e)}}
 function getSettings(){db.settings=db.settings||{};return db.settings}
 function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;saveDB()}
 function current(){return db.datasets[currentDataset]||Object.values(db.datasets)[0]}
@@ -525,7 +525,8 @@ let auth=authLoad();
 async function sbFetch(path, opts={}){
   const headers={"apikey":SUPABASE_KEY,"Content-Type":"application/json","Prefer":"return=representation",...(opts.headers||{})};
   if(auth?.access_token) headers.Authorization="Bearer "+auth.access_token;
-  const r=await fetch(SUPABASE_URL+"/rest/v1/"+path,{...opts,headers});
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),4000);
+  let r;try{r=await fetch(SUPABASE_URL+"/rest/v1/"+path,{...opts,headers,signal:controller.signal})}finally{clearTimeout(timer)}
   if(!r.ok) throw new Error(await r.text());
   return r.status===204?null:r.json();
 }
@@ -627,10 +628,19 @@ document.getElementById("navAdmin").onclick=async()=>{showScreen("admin");await 
 document.getElementById("themeBtn").onclick=()=>{const d=document.documentElement,t=d.dataset.theme==="dark"?"":"dark";d.dataset.theme=t;localStorage.setItem(THEME,t);document.getElementById("themeBtn").textContent=t?"☀":"☾"};
 document.getElementById("loginBtn").onclick=authModal;
 if(localStorage.getItem(THEME)==="dark"){document.documentElement.dataset.theme="dark";document.getElementById("themeBtn").textContent="☀"}
-updateLoginButton();
-recordVisit();
-if(auth?.access_token) checkAdmin().then(()=>{});
-(async()=>{await loadPublicVocabulary();if(auth?.access_token)await cloudLoadStats();render()})().catch(()=>render());
+// 起動時はネットワークを待たず、まずローカルの画面を即表示する。
+// iPad/SafariでSupabaseへの通信が遅い場合でも白画面にならないようにする。
+try{updateLoginButton()}catch(e){}
+try{recordVisit()}catch(e){}
+try{render()}catch(e){
+  document.getElementById("quizScreen").innerHTML='<div class="panel"><h1>問題</h1><p class="muted">読み込み中にエラーが発生しました。ページを再読み込みしてください。</p></div>';
+}
+if(auth?.access_token) checkAdmin().catch(()=>{});
+(async()=>{
+  try{await Promise.race([loadPublicVocabulary(),new Promise(r=>setTimeout(r,2500))])}catch(e){}
+  try{if(auth?.access_token)await Promise.race([cloudLoadStats(),new Promise(r=>setTimeout(r,2500))])}catch(e){}
+  try{render()}catch(e){}
+})();
 document.addEventListener("keydown",e=>{
   // Result screen shortcuts: Enter starts mistake review, Escape returns to settings.
   if(quiz && quiz.ended && !quiz.active){
