@@ -31,34 +31,32 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
 .empty{text-align:center;padding:35px;color:var(--muted)}
 @media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.wordRow{grid-template-columns:42px 1fr 1fr 55px}.wordRow .stat,.wordRow .condition{font-size:11px}.sessionGrid{grid-template-columns:1fr 1fr}.questionCard{padding-top:20px}.question{font-size:34px}}
 @media(max-width:450px){.grid{grid-template-columns:1fr}.wordRow{grid-template-columns:38px 1fr 1fr}.wordRow .status{display:block}.choices{gap:8px}.choice{min-height:60px;padding:9px;font-size:14px}.nav button{padding:7px 6px}.logo{font-size:16px}}
-.wordRow{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;border:0;border-bottom:1px solid var(--line);background:transparent;display:grid;grid-template-columns:60px minmax(130px,1fr) minmax(180px,1.5fr) 38px 120px 80px;gap:8px;align-items:center;padding:11px 8px;min-height:54px}.wordRow:hover{background:var(--hover)}@media(max-width:720px){.wordRow{grid-template-columns:44px 1fr 42px;gap:6px}.wordRow .jp{grid-column:2/-1}.wordRow .stat{display:none}.wordRow .condition{grid-column:2/-1}.wordRow .en{min-width:0;overflow-wrap:anywhere}}
+.wordRow{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;border:0;border-bottom:1px solid var(--line);background:transparent;display:grid;grid-template-columns:60px minmax(130px,1fr) minmax(180px,1.5fr) 38px 120px 80px;gap:8px;align-items:center;padding:11px 8px;min-height:54px}.wordRow:hover{background:var(--hover)}/* iPad: keep the wordbook readable without squeezing status/recent/retention into one row */
+@media (min-width:721px) and (max-width:1180px){
+  .wordRow{
+    display:grid;
+    grid-template-columns:52px minmax(0,1fr) 110px;
+    grid-template-areas:"num en status" "num jp status" "num recent condition";
+    align-items:center;
+    gap:5px 12px;
+    padding:13px 14px;
+    min-height:82px;
+  }
+  .wordRow .num{grid-area:num;align-self:start;padding-top:3px}
+  .wordRow .en{grid-area:en;min-width:0;white-space:normal;overflow-wrap:anywhere}
+  .wordRow .jp{grid-area:jp;min-width:0;white-space:normal;overflow-wrap:anywhere}
+  .wordRow .status{grid-area:status;justify-self:end;white-space:nowrap}
+  .wordRow .recent{grid-area:recent;min-width:0;white-space:normal}
+  .wordRow .condition{grid-area:condition;justify-self:end;white-space:nowrap}
+}
+
+@media(max-width:720px){.wordRow{grid-template-columns:44px 1fr 42px;gap:6px}.wordRow .jp{grid-column:2/-1}.wordRow .stat{display:none}.wordRow .condition{grid-column:2/-1}.wordRow .en{min-width:0;overflow-wrap:anywhere}}
 
 /* 第11回修正: 単語帳・解説・直近・管理者削除 */
 .correctLabel,.diffLabel{font-size:12px;color:var(--muted);font-weight:750;margin-top:10px}.explanation{margin-top:14px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--bg);line-height:1.65;overflow-wrap:anywhere}.explanationTitle{font-weight:850;margin-bottom:5px}.retention{margin-top:12px;padding:9px 12px;border-radius:10px;background:var(--bg);display:flex;justify-content:center;gap:10px;align-items:center}.retention b{font-size:17px}.recent{font-size:11px;color:var(--muted);white-space:nowrap}.recentLabel{margin-right:3px}.recentDots i{font-style:normal;font-weight:800;margin-right:2px}.recentDots .rGood{color:var(--good)}.recentDots .rBad{color:var(--bad)}.datasetAdminList{display:grid;gap:8px}.datasetAdminRow{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;padding:10px 12px}.datasetAdminRow>div:first-child{min-width:0}.datasetAdminRow .adminActions{justify-content:flex-end}.wordRow .statusBadge{justify-self:start}.wordRow .condition b{font-size:14px;color:var(--text)}
 @media(max-width:720px){
   .wordRow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;grid-template-areas:"num en status" "num jp status" "num recent condition";align-items:center;gap:3px 8px;padding:11px 10px;min-height:76px}
   .wordRow .num{grid-area:num;align-self:start;padding-top:2px}.wordRow .en{grid-area:en;font-size:16px;min-width:0}.wordRow .jp{grid-area:jp;min-width:0;font-size:13px;line-height:1.45}.wordRow .status{grid-area:status;align-self:start}.wordRow .recent{grid-area:recent}.wordRow .condition{grid-area:condition;justify-self:end;font-size:12px}.datasetAdminRow{align-items:flex-start;flex-direction:column}.datasetAdminRow .adminActions{width:100%}.datasetAdminRow .adminActions button{flex:1}.result{scroll-margin-top:12px}
-}
-
-/* iPad/tablet wordbook layout: keep all learning info separated */
-@media (min-width:721px) and (max-width:1180px){
-  .wordRow{
-    grid-template-columns:48px minmax(0,1fr) auto;
-    grid-template-areas:"num en status"
-                         "num jp status"
-                         "num recent condition";
-    align-items:center;
-    gap:4px 12px;
-    padding:12px 14px;
-    min-height:82px;
-  }
-  .wordRow .num{grid-area:num;align-self:start;padding-top:2px}
-  .wordRow .en{grid-area:en;min-width:0;font-size:16px;overflow-wrap:anywhere}
-  .wordRow .jp{grid-area:jp;min-width:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
-  .wordRow .status{grid-area:status;align-self:start;justify-self:end}
-  .wordRow .recent{grid-area:recent;font-size:12px;min-width:0}
-  .wordRow .condition{grid-area:condition;justify-self:end;font-size:13px;white-space:nowrap}
-  .wordRow .statusBadge{font-size:12px}
 }
 </style>
 </head>
