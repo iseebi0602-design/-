@@ -401,6 +401,18 @@ function checkReview(i=null,isNone=false){
     renderReview();
     if(quiz.currentMode==="spell"){const input=document.getElementById("ans");if(input){try{input.focus({preventScroll:true})}catch(e){input.focus()}}}
   };
+  // Mobile spelling review: keep Enter working after the answer is shown.
+  // The input remains focused/readOnly, so Enter must activate the visible next button.
+  if(isMobileSpell){
+    const input=document.getElementById("ans");
+    if(input) input.onkeydown=e=>{
+      if(e.key==="Enter"){
+        e.preventDefault(); e.stopPropagation();
+        if(quiz.answered){ document.getElementById("reviewNextBtn")?.click(); }
+        else { checkReview(); }
+      }
+    };
+  }
   if(window.matchMedia("(max-width:700px)").matches){
     requestAnimationFrame(()=>{
       const box=document.getElementById("reviewResultBox");
