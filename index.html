@@ -326,7 +326,7 @@ function renderReview(){
   if(mode==="spell")answerArea=`<input id="ans" class="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="英語を入力">`;
   else{const made=makeChoices(w,mode==="jp5"?"jp":"en");quiz.choices=made.choices;quiz.noneCorrect=made.noneCorrect;answerArea=`<div class="choices">${made.choices.map((x,i)=>`<button class="choice" data-i="${i}"><kbd>${i+1}</kbd>${escape(mode==="jp5"?x.jp:x.en)}</button>`).join("")}<button class="choice noneChoice" data-none="1"><kbd>5</kbd>「この中にはない」</button></div>`}
   document.getElementById("quizScreen").innerHTML=`<div class="panel"><div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div><div class="questionCard"><div class="qLabel">復習・${modeLabel(mode)}</div><div class="question">${escape(mode==="spell"||mode==="en5"?w.jp:w.en)}</div><div class="conditionNow">学習記録 ${quiz.noRecord?"反映なし":"反映あり"}</div></div><div class="answerArea">${answerArea}<div id="resultBox"></div></div></div>`;
-  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").onkeydown=e=>{if(e.key==="Enter")checkReview()}}
+  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkReview()}}}
   else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkReview(4,true):checkReview(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
 }
