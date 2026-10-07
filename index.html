@@ -401,7 +401,12 @@ function checkReview(i=null,isNone=false){
     renderReview();
     if(quiz.currentMode==="spell"){const input=document.getElementById("ans");if(input){try{input.focus({preventScroll:true})}catch(e){input.focus()}}}
   };
-  if(!isMobileSpell && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("reviewResultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
+  if(window.matchMedia("(max-width:700px)").matches){
+    requestAnimationFrame(()=>{
+      const box=document.getElementById("reviewResultBox");
+      if(box) box.scrollIntoView({behavior:"smooth",block:"start"});
+    });
+  }
 }
 function finishReview(){
   const r=quiz,el=document.getElementById("quizScreen");
