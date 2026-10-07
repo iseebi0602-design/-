@@ -208,90 +208,48 @@ function buildMixModes(n,selected){
   for(let i=0;i<n;i++) out.push(base[i%3]);
   return shuffle(out);
 }
-function currentQuizItem(){
-  if(!quiz.review) return {word:quiz.queue[quiz.index], mode:(quiz.mode==="mix"?(quiz.mixModes?.[quiz.index]||"spell"):quiz.mode), initialHint:!!quiz.initialHint};
-  const item=quiz.queue[quiz.index];
-  return {word:item.word, mode:item.mode, initialHint:item.initialHint===true};
-}
 function renderQuizActive(el){
-  if(quiz.index>=quiz.queue.length){quiz.review?finishReview():finishSession();return}
-  const item=currentQuizItem(), w=item.word, v=stat(w.no), mode=item.mode;
+  if(quiz.index>=quiz.queue.length){finishSession();return}
+  const w=quiz.queue[quiz.index], v=stat(w.no);
+  let mode=quiz.mode;
+  if(mode==="mix") mode=quiz.mixModes?.[quiz.index]||"spell";
   quiz.currentMode=mode;
   const q=mode==="spell"||mode==="en5"?w.jp:w.en;
   let answerArea="";
-  if(mode==="spell") answerArea=`<input id="ans" class="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="英語を入力">`;
+  if(mode==="spell")answerArea=`<input id="ans" class="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="英語を入力">`;
   else{
     const made=makeChoices(w,mode==="jp5"?"jp":"en");
     quiz.choices=made.choices; quiz.noneCorrect=made.noneCorrect;
     answerArea=`<div class="choices">${made.choices.map((x,i)=>`<button class="choice" data-i="${i}"><kbd>${i+1}</kbd>${escape(mode==="jp5"?x.jp:x.en)}</button>`).join("")}<button class="choice noneChoice" data-none="1"><kbd>5</kbd>「この中にはない」</button></div>`;
   }
-  const label=quiz.review?`復習・${modeLabel(mode)}`:modeLabel(mode);
-  const status=quiz.review?`学習記録 ${quiz.noRecord?"反映なし":"反映あり"}`:`定着度 <b>${v.cond}</b>`;
-  const hint=(mode==="spell"&&item.initialHint)?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:"";
-  el.innerHTML=`<div class="panel">
-    <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
-    <div class="questionCard"><div class="qLabel">${label}</div><div class="question">${escape(q)}</div><div class="conditionNow">${status}${hint}</div></div>
-    <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
-  </div>`;
-  if(mode==="spell"){
-    const input=document.getElementById("ans");
-    requestAnimationFrame(()=>{try{input.focus({preventScroll:true})}catch(e){input.focus()}});
-    input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}});
-  } else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkAnswer(4,true):checkAnswer(+b.dataset.i,false));
+  el.innerHTML=`
+    <div class="panel">
+      <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
+      <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">定着度 <b>${v.cond}</b>${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
+      <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
+    </div>`;
+  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}})}
+  else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkAnswer(4,true):checkAnswer(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>endQuiz();
 }
 function checkAnswer(choiceIndex=null,isNone=false){
   if(quiz.answered){nextQuestion();return}
-  const item=currentQuizItem(), w=item.word, mode=item.mode;
+  const w=quiz.queue[quiz.index], mode=quiz.currentMode;
   let user="",ok=false;
-  if(mode==="spell"){user=document.getElementById("ans")?.value.trim()||"";ok=user.toLowerCase()===w.en.toLowerCase()}
-  else if(isNone){user="この中にはない";ok=!!quiz.noneCorrect;}
-  else{user=quiz.choices[choiceIndex]?.en||"";ok=!quiz.noneCorrect && quiz.choices[choiceIndex]?.no===w.no;}
-
-  const delta=quiz.review?(ok?5:-5):null;
-  const rec=record(w.no,ok,delta);
-  quiz.answered=true;
-  quiz.session.push({word:w,mode,ok,user,condition:rec});
-  if(!ok) quiz.mistakes.push(quiz.review?w:{word:w,mode,user,initialHint:item.initialHint});
-
+  if(mode==="spell"){user=document.getElementById("ans").value.trim();ok=user.toLowerCase()===w.en.toLowerCase()}
+  else{
+    if(isNone){user="この中にはない";ok=!!quiz.noneCorrect;}
+    else{user=quiz.choices[choiceIndex]?.en||"";ok=!quiz.noneCorrect && quiz.choices[choiceIndex]?.no===w.no;}
+  }
+  const rec=record(w.no,ok);
+  quiz.answered=true;quiz.session.push({word:w,mode,ok,user,condition:rec});
+  if(!ok)quiz.mistakes.push({word:w,mode,user,initialHint:quiz.initialHint});
   const box=document.getElementById("resultBox");
   const answerText=mode==="jp5"?w.jp:w.en;
-  const noneNote=(!ok && quiz.noneCorrect && !isNone)?`<div class="noneResult">${quiz.review?"正解は「この中にはない」です":"「この中にはない」"}</div>`:"";
-  box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${quiz.review&&quiz.noRecord?"記録なし":`${rec.before} → ${rec.after}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  const noneNote=(!ok && quiz.noneCorrect && !isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
+  box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${rec.before} → ${rec.after}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
   document.getElementById("nextBtn").onclick=nextQuestion;
   if(mode==="spell" && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
-}
-function nextQuestion(){
-  if(!quiz?.answered)return;
-  quiz.index++; quiz.answered=false;
-  renderQuizActive(document.getElementById("quizScreen"));
-}
-function endQuiz(){if(!quiz)return;quiz.active=false;quiz.ended=true;quiz.review?finishReview():showSummary()}
-function finishSession(){quiz.active=false;quiz.ended=true;showSummary()}
-function showSummary(){
-  const el=document.getElementById("quizScreen"), q=quiz;
-  const correct=q.session.filter(x=>x.ok).length,total=q.session.length;
-  el.innerHTML=`<div class="panel"><h1>結果</h1><div class="sessionGrid"><div class="bigStat"><b>${correct} / ${total}</b><span class="muted">正解</span></div><div class="bigStat"><b>${total?Math.round(correct/total*100):0}%</b><span class="muted">今回の正答率</span></div><div class="bigStat"><b>${q.mistakes.length}</b><span class="muted">間違い</span></div></div>
-  <details class="drawer"><summary class="mistakeDrawerSummary">▸ 間違えた問題（${q.mistakes.length}問）</summary><div class="drawerBody">${q.mistakes.length?q.mistakes.map(x=>`<div class="mistakeItem"><span><b>${escape(x.word.en)}</b><br><span class="muted">${escape(x.word.jp)}</span></span><span class="tag">${modeLabel(x.mode)}</span></div>`).join(""):"なし"}</div></details>
-  <p class="muted">※引き出しを開いた場合、「間違えた問題を解く」の回答は学習記録に反映されません。</p>
-  ${q.mistakes.length?`<button id="reviewBtn" class="primary" style="width:100%;margin-top:8px">間違えた問題を解く (Enter)</button>`:""}
-  <button id="backBtn" class="secondary" style="width:100%;margin-top:8px">問題設定へ戻る (Esc)</button>
-  </div>`;
-  const d=el.querySelector("details");
-  if(d)d.addEventListener("toggle",()=>{if(d.open)q.drawerOpened=true});
-  const rb=document.getElementById("reviewBtn");if(rb)rb.onclick=()=>startReview(q.mistakes,q.drawerOpened);
-  document.getElementById("backBtn").onclick=()=>{quiz=null;renderQuiz()};
-}
-function startReview(items,noRecord){
-  quiz={active:true,review:true,queue:shuffle(items),index:0,mode:"review",initialHint:false,answered:false,noRecord,session:[],mistakes:[]};
-  renderQuizActive(document.getElementById("quizScreen"));
-}
-function finishReview(){
-  const r=quiz,el=document.getElementById("quizScreen");
-  el.innerHTML=`<div class="panel"><h1>復習結果</h1><div class="sessionGrid"><div class="bigStat"><b>${r.session.filter(x=>x.ok).length} / ${r.session.length}</b><span class="muted">正解</span></div><div class="bigStat"><b>${r.mistakes.length}</b><span class="muted">もう一度間違えた問題</span></div></div>
-  ${r.mistakes.length?`<div class="panel" style="margin-top:10px"><b>もう一度間違えた問題</b><div class="wordGroups">${r.mistakes.map(w=>`<div class="mistakeItem"><span>${escape(w.en)}<br><span class="muted">${escape(w.jp)}</span></span></div>`).join("")}</div></div>`:""}
-  <button class="secondary" id="doneReview" style="width:100%;margin-top:10px">問題設定へ戻る (Esc)</button></div>`;
-  document.getElementById("doneReview").onclick=()=>{quiz=null;renderQuiz()};
 }
 function diffHtml(a,b){
   // 正しい文字は通常色、余分・間違いは赤。
@@ -399,21 +357,51 @@ function checkReview(i=null,isNone=false){
   const noneNote=(!ok&&quiz.noneCorrect&&!isNone)?`<div class="noneResult">正解は「この中にはない」です</div>`:"";
   const afterCond=quiz.noRecord?beforeCond:(ok?Math.min(100,beforeCond+5):Math.max(0,beforeCond-5));
   const screen=document.getElementById("quizScreen");
-  screen.innerHTML=`<div class="panel reviewResultPanel">
-    <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
-    <div class="questionCard"><div class="qLabel">復習・${modeLabel(mode)}</div><div class="question">${escape(mode==="spell"||mode==="en5"?w.jp:w.en)}</div></div>
-    <div class="result" id="reviewResultBox">
+  const isMobileSpell = window.matchMedia("(max-width:700px)").matches && mode==="spell";
+  const resultHtml=`<div class="result" id="reviewResultBox">
       <div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>
       ${noneNote}
       <div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>
       ${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}
       <div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div>
       <div class="nextWrap"><button class="primary" id="reviewNextBtn">次の問題 (Enter)</button></div>
-    </div>
-  </div>`;
-  document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
-  document.getElementById("reviewNextBtn").onclick=()=>{quiz.index++;quiz.answered=false;renderReview();if(quiz.currentMode==="spell"){const input=document.getElementById("ans");if(input){try{input.focus({preventScroll:true})}catch(e){input.focus()}}}};
-  if(window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("reviewResultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
+    </div>`;
+  if(isMobileSpell){
+    // Keep the existing input element alive. Replacing quizScreen would make iOS dismiss the keyboard.
+    const input=document.getElementById("ans");
+    if(input){ input.readOnly=true; input.setAttribute("aria-disabled","true"); }
+    const box=document.getElementById("resultBox");
+    if(box) box.innerHTML=resultHtml;
+  }else{
+    screen.innerHTML=`<div class="panel reviewResultPanel">
+      <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
+      <div class="questionCard"><div class="qLabel">復習・${modeLabel(mode)}</div><div class="question">${escape(mode==="spell"||mode==="en5"?w.jp:w.en)}</div></div>
+      ${resultHtml}
+    </div>`;
+  }
+  const end=document.getElementById("endBtn"); if(end) end.onclick=()=>{quiz=null;renderQuiz()};
+  const next=document.getElementById("reviewNextBtn");
+  if(next) next.onclick=()=>{
+    const nextItem=quiz.queue[quiz.index+1];
+    quiz.index++; quiz.answered=false;
+    if(isMobileSpell && nextItem && nextItem.mode==="spell"){
+      quiz.currentMode="spell";
+      const q=document.querySelector("#quizScreen .question"); if(q) q.textContent=nextItem.word.jp;
+      const prog=document.querySelector("#quizScreen .progress"); if(prog) prog.textContent=`${quiz.index+1} / ${quiz.queue.length}`;
+      const label=document.querySelector("#quizScreen .qLabel"); if(label) label.textContent="復習・スペル入力";
+      const input=document.getElementById("ans");
+      if(input){ input.readOnly=false; input.removeAttribute("aria-disabled"); input.value=""; input.focus({preventScroll:true}); }
+      const box=document.getElementById("resultBox"); if(box) box.innerHTML="";
+      quiz.curHint = nextItem.initialHint===true;
+      const cond=document.querySelector("#quizScreen .conditionNow"); if(cond) cond.innerHTML=`${quiz.noRecord?"学習記録 反映なし":"学習記録 反映あり"}${quiz.curHint?`　　頭文字 <b>${escape(nextItem.word.en.charAt(0))}</b>`:""}`;
+      quiz.currentMode="spell";
+      quiz.queue[quiz.index]=nextItem;
+      return;
+    }
+    renderReview();
+    if(quiz.currentMode==="spell"){const input=document.getElementById("ans");if(input){try{input.focus({preventScroll:true})}catch(e){input.focus()}}}
+  };
+  if(!isMobileSpell && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("reviewResultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
 function finishReview(){
   const r=quiz,el=document.getElementById("quizScreen");
@@ -719,5 +707,6 @@ alter table public.word_stats add primary key (user_id, dataset_id, word_no);
 */
 
 </script>
+<!-- mobile review keyboard continuity patch: keeps spell input DOM alive between review questions -->
 </body>
 </html>
