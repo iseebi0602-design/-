@@ -110,7 +110,7 @@ function loadDB(){
 }
 function saveDB(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){console.warn("saveDB",e)}}
 function getSettings(){db.settings=db.settings||{};return db.settings}
-function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;saveDB()}
+function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;s.initialHint=document.getElementById("initialHint")?.value||"off";saveDB()}
 function current(){return db.datasets[currentDataset]||Object.values(db.datasets)[0]}
 function ensureStats(s){
   if(!s.stats) s.stats={};
@@ -168,16 +168,16 @@ function renderQuiz(){
           <div class="grid" style="margin-top:10px">
             <div class="field"><label>出題モード</label><select id="mode"><option value="spell">スペル入力</option><option value="jp5">日本語5択</option><option value="en5">英語5択</option><option value="mix">ミックス</option></select></div>
             <div class="field"><label>学習状態</label><select id="stateFilter"><option value="all">すべて</option><option value="unlearned">？ 未学習</option><option value="good">◎ 定着</option><option value="stable">○ 安定</option><option value="warn">△ 要注意</option><option value="weak">× 苦手</option></select></div>
-            
+            <div class="field"><label>頭文字表示</label><select id="initialHint"><option value="off">なし</option><option value="on">あり</option></select></div>
           </div>
           <div id="quizAdminComment"></div><button id="startBtn" class="primary" style="margin-top:12px">開始 (Enter)</button>
         </div>
       </details>
     </div>`;
   const ps=getSettings();
-  ["mode","stateFilter"].forEach(id=>{const el=document.getElementById(id);if(ps[id]!=null)el.value=ps[id]});
+  ["mode","stateFilter","initialHint"].forEach(id=>{const el=document.getElementById(id);if(ps[id]!=null)el.value=ps[id]});
   document.getElementById("setSelect").onchange=e=>{currentDataset=e.target.value;db.currentDataset=currentDataset;saveDB();renderQuiz()};
-  ["fromNo","toNo","count","mode","stateFilter"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
+  ["fromNo","toNo","count","mode","stateFilter","initialHint"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
   document.getElementById("startBtn").onclick=startQuiz;
   loadNotices().then(notices=>{const box=document.getElementById("noticeBoard");if(!box)return;box.innerHTML=notices.length?notices.map(n=>`<details class="noticeCard"><summary>${escape(n.title)} <span class="tag">${escape(n.kind||"通常")}</span></summary><div class="noticeBody">${escape(n.body)}</div></details>`).join(""):"<div class=\"empty\">お知らせはありません。</div>"}).catch(()=>{});
   loadPublicComment().then(x=>{const box=document.getElementById("quizAdminComment");if(x)box.innerHTML=`<div class="commentCard"><div class="commentTitle">管理者からのコメント</div><div>${escape(x.body)}</div></div>`}).catch(()=>{});
@@ -199,7 +199,7 @@ function startQuiz(){
   saveSettingsFromUI();
   let mode=document.getElementById("mode").value;
   const selected=shuffle(pool).slice(0,n);
-  quiz={active:true,queue:selected,index:0,mode,answered:false,session:[],mistakes:[],mixModes:buildMixModes(n,selected)};
+  quiz={active:true,queue:selected,index:0,mode,initialHint:document.getElementById("initialHint")?.value==="on",answered:false,session:[],mistakes:[],mixModes:buildMixModes(n,selected)};
   renderQuiz();
 }
 function buildMixModes(n,selected){
@@ -225,7 +225,7 @@ function renderQuizActive(el){
   el.innerHTML=`
     <div class="panel">
       <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
-      <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">定着度 <b>${v.cond}</b></div></div>
+      <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">定着度 <b>${v.cond}</b>${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
       <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
     </div>`;
   if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}})}
@@ -243,7 +243,7 @@ function checkAnswer(choiceIndex=null,isNone=false){
   }
   const rec=record(w.no,ok);
   quiz.answered=true;quiz.session.push({word:w,mode,ok,user,condition:rec});
-  if(!ok)quiz.mistakes.push({word:w,mode,user});
+  if(!ok)quiz.mistakes.push({word:w,mode,user,initialHint:quiz.initialHint});
   const box=document.getElementById("resultBox");
   const answerText=mode==="jp5"?w.jp:w.en;
   const noneNote=(!ok && quiz.noneCorrect && !isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
@@ -316,18 +316,23 @@ function showSummary(){
   if(rb)rb.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();rb.click()}};
 }
 function startReview(items,noRecord){
-  quiz={active:true,review:true,queue:shuffle(items),index:0,mode:"review",answered:false,noRecord,session:[],mistakes:[]};
+  quiz={active:true,review:true,queue:shuffle(items),index:0,mode:"review",initialHint:false,answered:false,noRecord,session:[],mistakes:[]};
   renderReview();
 }
 function renderReview(){
   if(quiz.index>=quiz.queue.length){finishReview();return}
   const item=quiz.queue[quiz.index],w=item.word,mode=item.mode;
-  quiz.currentMode=mode;let answerArea="";
-  if(mode==="spell")answerArea=`<input id="ans" class="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="英語を入力">`;
+  quiz.currentMode=mode;
+  const hint=mode==="spell" && item.initialHint===true;
+  let answerArea="";
+  if(mode==="spell")answerArea=`<input id="ans" class="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="英語を入力">`;
   else{const made=makeChoices(w,mode==="jp5"?"jp":"en");quiz.choices=made.choices;quiz.noneCorrect=made.noneCorrect;answerArea=`<div class="choices">${made.choices.map((x,i)=>`<button class="choice" data-i="${i}"><kbd>${i+1}</kbd>${escape(mode==="jp5"?x.jp:x.en)}</button>`).join("")}<button class="choice noneChoice" data-none="1"><kbd>5</kbd>「この中にはない」</button></div>`}
-  document.getElementById("quizScreen").innerHTML=`<div class="panel"><div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div><div class="questionCard"><div class="qLabel">復習・${modeLabel(mode)}</div><div class="question">${escape(mode==="spell"||mode==="en5"?w.jp:w.en)}</div><div class="conditionNow">学習記録 ${quiz.noRecord?"反映なし":"反映あり"}</div></div><div class="answerArea">${answerArea}<div id="resultBox"></div></div></div>`;
-  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkReview()}}}
-  else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkReview(4,true):checkReview(+b.dataset.i,false));
+  document.getElementById("quizScreen").innerHTML=`<div class="panel"><div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div><div class="questionCard"><div class="qLabel">復習・${modeLabel(mode)}</div><div class="question">${escape(mode==="spell"||mode==="en5"?w.jp:w.en)}</div><div class="conditionNow">${quiz.noRecord?"学習記録 反映なし":"学習記録 反映あり"}${hint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div><div class="answerArea">${answerArea}<div id="resultBox"></div></div></div>`;
+  if(mode==="spell"){
+    const input=document.getElementById("ans");
+    input.focus({preventScroll:true});
+    input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkReview()}};
+  } else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkReview(4,true):checkReview(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
 }
 function checkReview(i=null,isNone=false){
@@ -365,7 +370,7 @@ function checkReview(i=null,isNone=false){
     </div>
   </div>`;
   document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
-  document.getElementById("reviewNextBtn").onclick=()=>{quiz.index++;quiz.answered=false;renderReview()};
+  document.getElementById("reviewNextBtn").onclick=()=>{quiz.index++;quiz.answered=false;renderReview();if(quiz.currentMode==="spell"){const input=document.getElementById("ans");if(input){try{input.focus({preventScroll:true})}catch(e){input.focus()}}}};
   if(window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("reviewResultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
 function finishReview(){
