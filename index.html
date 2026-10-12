@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>英語はRHYTHM</title>
+<title>英語はRHYTHM 第22回</title>
 <style>
 :root{--bg:#f6f7f9;--panel:#fff;--text:#15171a;--muted:#68707a;--line:#e2e5e9;--accent:#2457d6;--good:#18794e;--bad:#c43b3b;--warn:#a56b00;--shadow:0 8px 30px #0000000c}
 [data-theme=dark]{--bg:#111317;--panel:#191c21;--text:#f2f4f7;--muted:#a9b0ba;--line:#30353d;--accent:#82a7ff;--good:#55c891;--bad:#ff7777;--warn:#e6ad4e;--shadow:0 8px 30px #00000040}
@@ -17,7 +17,7 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar input,.toolbar select,.field input,.field select{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:9px 11px;outline:none}
 .primary,.secondary,.danger{border:0;border-radius:11px;padding:10px 14px;font-weight:700}.primary{background:var(--accent);color:white}.secondary{background:var(--bg);border:1px solid var(--line)}.danger{background:#b82e35;color:white}
 .drawer{margin-top:16px;border:2px solid var(--line);border-radius:13px;overflow:hidden;background:var(--panel)}.drawer>summary{cursor:pointer;list-style:none;padding:15px 16px;font-size:16px;font-weight:800;color:var(--text);background:var(--bg)}.drawer>summary::-webkit-details-marker{display:none}.mistakeDrawerSummary{background:var(--bg)!important;border:2px solid var(--accent);color:var(--text)!important}.drawer>summary::before{content:"▸";display:inline-block;margin-right:8px;color:var(--accent);transition:transform .15s ease}.drawer[open]>summary::before{transform:rotate(90deg)}.drawerBody{padding:12px 16px 4px;border-top:1px solid var(--line)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%}.stateFilterChoices{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}.stateFilterChoices label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text);margin:0;white-space:nowrap}.stateFilterChoices input{width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto}
 .dataActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.fileInput{display:none}
 .datasetTabs{display:flex;gap:7px;overflow:auto;padding-bottom:5px}.datasetTab{white-space:nowrap;border:1px solid var(--line);background:var(--panel);padding:8px 11px;border-radius:10px}.datasetTab.active{border-color:var(--accent);color:var(--accent);font-weight:700}
 .wordGroups{display:grid;gap:8px;margin-top:12px}.group{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--panel)}.group summary{padding:11px 13px;cursor:pointer;font-weight:750}.wordList{border-top:1px solid var(--line)}.wordRow{display:grid;grid-template-columns:52px minmax(130px,1.1fr) minmax(180px,1.7fr) 75px 78px 78px;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}.wordRow:last-child{border-bottom:0}.num{color:var(--muted);font-variant-numeric:tabular-nums}.en{font-weight:750;overflow-wrap:anywhere}.jp{overflow-wrap:anywhere}.status{font-weight:800}.stat{font-size:12px;color:var(--muted)}.condition{font-weight:750}
@@ -114,7 +114,7 @@ function loadDB(){
 }
 function saveDB(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){console.warn("saveDB",e)}}
 function getSettings(){db.settings=db.settings||{};return db.settings}
-function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilter=document.getElementById("stateFilter").value;s.initialHint=document.getElementById("initialHint")?.value||"off";saveDB()}
+function saveSettingsFromUI(){const s=getSettings();s.fromNo=+document.getElementById("fromNo").value||1;s.toNo=+document.getElementById("toNo").value||Math.min(100,current().words.length);s.count=+document.getElementById("count").value||20;s.mode=document.getElementById("mode").value;s.stateFilters=[...document.querySelectorAll("input[name=stateFilter]:checked")].map(x=>x.value);if(!s.stateFilters.length)s.stateFilters=["all"];s.stateFilter=s.stateFilters.length===1?s.stateFilters[0]:"multiple";s.initialHint=document.getElementById("initialHint")?.value||"off";saveDB()}
 function current(){return db.datasets[currentDataset]||Object.values(db.datasets)[0]}
 function ensureStats(s){
   if(!s.stats) s.stats={};
@@ -171,7 +171,14 @@ function renderQuiz(){
           </div>
           <div class="grid" style="margin-top:10px">
             <div class="field"><label>出題モード</label><select id="mode"><option value="spell">スペル入力</option><option value="jp5">日本語5択</option><option value="en5">英語5択</option><option value="mix">ミックス</option></select></div>
-            <div class="field"><label>学習状態</label><select id="stateFilter"><option value="all">すべて</option><option value="unlearned">？ 未学習</option><option value="good">◎ 定着</option><option value="stable">○ 安定</option><option value="warn">△ 要注意</option><option value="weak">× 苦手</option></select></div>
+            <div class="field"><label>学習状態（複数選択可）</label><div class="stateFilterChoices" id="stateFilterChoices">
+              <label><input type="checkbox" name="stateFilter" value="all"> すべて</label>
+              <label><input type="checkbox" name="stateFilter" value="unlearned"> ？ 未学習</label>
+              <label><input type="checkbox" name="stateFilter" value="good"> ◎ 定着</label>
+              <label><input type="checkbox" name="stateFilter" value="stable"> ○ 安定</label>
+              <label><input type="checkbox" name="stateFilter" value="warn"> △ 要注意</label>
+              <label><input type="checkbox" name="stateFilter" value="weak"> × 苦手</label>
+            </div></div>
             <div class="field"><label>頭文字表示</label><select id="initialHint"><option value="off">なし</option><option value="on">あり</option></select></div>
           </div>
           <div id="quizAdminComment"></div><button id="startBtn" class="primary" style="margin-top:12px">開始 (Enter)</button>
@@ -179,9 +186,20 @@ function renderQuiz(){
       </details>
     </div>`;
   const ps=getSettings();
-  ["mode","stateFilter","initialHint"].forEach(id=>{const el=document.getElementById(id);if(ps[id]!=null)el.value=ps[id]});
+  ["mode","initialHint"].forEach(id=>{const el=document.getElementById(id);if(ps[id]!=null)el.value=ps[id]});
+  const savedFilters=Array.isArray(ps.stateFilters)?ps.stateFilters:(ps.stateFilter&&ps.stateFilter!=="multiple"?[ps.stateFilter]:["all"]);
+  document.querySelectorAll("input[name=stateFilter]").forEach(cb=>cb.checked=savedFilters.includes(cb.value));
+  if(!document.querySelector('input[name="stateFilter"]:checked'))document.querySelector('input[name="stateFilter"][value="all"]').checked=true;
+  const filterBoxes=[...document.querySelectorAll('input[name="stateFilter"]')];
+  filterBoxes.forEach(cb=>cb.addEventListener("change",()=>{
+    const allBox=document.querySelector('input[name="stateFilter"][value="all"]');
+    if(cb.value==="all"&&cb.checked)filterBoxes.filter(x=>x.value!=="all").forEach(x=>x.checked=false);
+    else if(cb.value!=="all"&&cb.checked)allBox.checked=false;
+    else if(!filterBoxes.some(x=>x.checked))allBox.checked=true;
+    saveSettingsFromUI();
+  }));
   document.getElementById("setSelect").onchange=e=>{currentDataset=e.target.value;db.currentDataset=currentDataset;saveDB();renderQuiz()};
-  ["fromNo","toNo","count","mode","stateFilter","initialHint"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
+  ["fromNo","toNo","count","mode","initialHint"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
   document.getElementById("startBtn").onclick=startQuiz;
   loadNotices().then(notices=>{const box=document.getElementById("noticeBoard");if(!box)return;box.innerHTML=notices.length?notices.map(n=>`<details class="noticeCard"><summary>${escape(n.title)} <span class="tag">${escape(n.kind||"通常")}</span></summary><div class="noticeBody">${escape(n.body)}</div></details>`).join(""):"<div class=\"empty\">お知らせはありません。</div>"}).catch(()=>{});
   loadPublicComment().then(x=>{const box=document.getElementById("quizAdminComment");if(x)box.innerHTML=`<div class="commentCard"><div class="commentTitle">管理者からのコメント</div><div>${escape(x.body)}</div></div>`}).catch(()=>{});
@@ -196,8 +214,8 @@ function makeChoices(w,field){
 function startQuiz(){
   const s=current(), from=Math.max(1,+document.getElementById("fromNo").value||1), to=Math.min(s.words.length,+document.getElementById("toNo").value||s.words.length);
   let pool=s.words.filter(w=>w.no>=from&&w.no<=to);
-  const sf=document.getElementById("stateFilter").value;
-  if(sf!=="all")pool=pool.filter(w=>{const st=stateOf(stat(w.no));return sf==="unlearned"?st==="？":sf==="good"?st==="◎":sf==="stable"?st==="○":sf==="warn"?st==="△":st==="×"});
+  const filters=[...document.querySelectorAll('input[name="stateFilter"]:checked')].map(x=>x.value);
+  if(filters.length && !filters.includes("all"))pool=pool.filter(w=>{const st=stateOf(stat(w.no));return filters.some(sf=>sf==="unlearned"?st==="？":sf==="good"?st==="◎":sf==="stable"?st==="○":sf==="warn"?st==="△":sf==="weak"?st==="×":false)});
   if(!pool.length){alert("条件に合う単語がありません。");return}
   const n=Math.min(+document.getElementById("count").value||20,pool.length);
   saveSettingsFromUI();
@@ -415,23 +433,12 @@ function checkReview(i=null,isNone=false){
 function finishReview(){
   const r=quiz,el=document.getElementById("quizScreen");
   el.innerHTML=`<div class="panel"><h1>復習結果</h1><div class="sessionGrid"><div class="bigStat"><b>${r.session.filter(x=>x.ok).length} / ${r.session.length}</b><span class="muted">正解</span></div><div class="bigStat"><b>${r.mistakes.length}</b><span class="muted">もう一度間違えた問題</span></div></div>
-  ${r.mistakes.length?`<div class="panel" style="margin-top:10px"><div class="mistakeListHeader"><b>もう一度間違えた問題</b><label class="revealAllLabel"><input type="checkbox" id="showAllMistakes"> 英単語を表示する</label></div><p class="muted" style="font-size:12px;margin:6px 0 10px">英単語は1つずつタップして表示できます。</p><div class="wordGroups" id="reviewMistakeList">${r.mistakes.map(w=>`<div class="mistakeItem revealMistakeRow"><span class="mistakeNo">${w.no}</span><button type="button" class="revealWordBtn" data-reveal-no="${w.no}" aria-pressed="false" aria-label="英単語を表示">タップして英単語を表示</button><span class="mistakeJp muted">${escape(w.jp)}</span><span class="revealedEn hidden">${escape(w.en)}</span></div>`).join("")}</div></div>`:""}
+  ${r.mistakes.length?`<div class="panel" style="margin-top:10px"><div class="mistakeListHeader"><b>もう一度間違えた問題</b><label class="revealAllLabel"><input type="checkbox" id="showAllMistakes" checked> 英単語を表示する</label></div><div class="wordGroups" id="reviewMistakeList">${r.mistakes.map(w=>`<div class="mistakeItem revealMistakeRow"><span class="mistakeNo">${w.no}</span><span class="revealedEn">${escape(w.en)}</span><span class="mistakeJp muted">${escape(w.jp)}</span></div>`).join("")}</div></div>`:""}
   <button class="secondary" id="doneReview" style="width:100%;margin-top:10px">問題設定へ戻る (Esc)</button></div>`;
-  const revealState=new Set();
   const showAll=document.getElementById("showAllMistakes");
   const list=document.getElementById("reviewMistakeList");
-  function paintRevealRows(){
-    if(!list)return;
-    list.querySelectorAll(".revealMistakeRow").forEach(row=>{
-      const no=Number(row.querySelector("[data-reveal-no]")?.dataset.revealNo);
-      const revealed=showAll?.checked || revealState.has(no);
-      const btn=row.querySelector(".revealWordBtn"), en=row.querySelector(".revealedEn");
-      if(btn){btn.classList.toggle("hidden",!!revealed);btn.setAttribute("aria-pressed",String(!!revealed));}
-      if(en)en.classList.toggle("hidden",!revealed);
-    });
-  }
+  function paintRevealRows(){if(!list)return;list.querySelectorAll(".revealedEn").forEach(en=>en.classList.toggle("hidden",!showAll?.checked));}
   showAll?.addEventListener("change",paintRevealRows);
-  list?.querySelectorAll("[data-reveal-no]").forEach(btn=>btn.addEventListener("click",()=>{revealState.add(Number(btn.dataset.revealNo));paintRevealRows()}));
   document.getElementById("doneReview").onclick=()=>{quiz=null;renderQuiz()};
 }
 function groupCounts(words){const c={"◎":0,"○":0,"△":0,"×":0,"？":0};words.forEach(w=>c[stateOf(stat(w.no))]++);return c}
