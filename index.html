@@ -59,6 +59,10 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
   .wordRow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;grid-template-areas:"num en status" "num jp status" "num recent condition";align-items:center;gap:3px 8px;padding:11px 10px;min-height:76px}
   .wordRow .num{grid-area:num;align-self:start;padding-top:2px}.wordRow .en{grid-area:en;font-size:16px;min-width:0}.wordRow .jp{grid-area:jp;min-width:0;font-size:13px;line-height:1.45}.wordRow .status{grid-area:status;align-self:start}.wordRow .recent{grid-area:recent}.wordRow .condition{grid-area:condition;justify-self:end;font-size:12px}.datasetAdminRow{align-items:flex-start;flex-direction:column}.datasetAdminRow .adminActions{width:100%}.datasetAdminRow .adminActions button{flex:1}.result{scroll-margin-top:12px}
 }
+
+.mistakeListHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.revealAllLabel{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:650;cursor:pointer}.revealAllLabel input{width:19px;height:19px;accent-color:var(--accent)}.revealMistakeRow{display:grid;grid-template-columns:34px minmax(150px,1fr) minmax(120px,1fr);align-items:center;gap:10px}.mistakeNo{font-size:12px;color:var(--muted);font-weight:750}.revealWordBtn{border:1px dashed var(--line);background:var(--bg);color:var(--text);border-radius:9px;padding:9px 11px;text-align:left;font:inherit;font-size:14px;cursor:pointer;min-height:40px}.revealedEn{font-weight:800;overflow-wrap:anywhere}.mistakeJp{overflow-wrap:anywhere;font-size:14px}
+@media(max-width:720px){.revealMistakeRow{grid-template-columns:28px minmax(0,1fr);gap:8px}.revealMistakeRow .mistakeNo{grid-row:1/3}.revealMistakeRow .revealWordBtn,.revealMistakeRow .revealedEn{grid-column:2}.revealMistakeRow .mistakeJp{grid-column:2}.mistakeListHeader{align-items:flex-start;flex-direction:column}}
+
 </style>
 </head>
 <body>
@@ -225,7 +229,7 @@ function renderQuizActive(el){
   el.innerHTML=`
     <div class="panel">
       <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
-      <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">定着度 <b>${v.cond}</b>${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
+      <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">${statusBadge(stateOf(v))}${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
       <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
     </div>`;
   if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}})}
@@ -411,8 +415,23 @@ function checkReview(i=null,isNone=false){
 function finishReview(){
   const r=quiz,el=document.getElementById("quizScreen");
   el.innerHTML=`<div class="panel"><h1>復習結果</h1><div class="sessionGrid"><div class="bigStat"><b>${r.session.filter(x=>x.ok).length} / ${r.session.length}</b><span class="muted">正解</span></div><div class="bigStat"><b>${r.mistakes.length}</b><span class="muted">もう一度間違えた問題</span></div></div>
-  ${r.mistakes.length?`<div class="panel" style="margin-top:10px"><b>もう一度間違えた問題</b><div class="wordGroups">${r.mistakes.map(w=>`<div class="mistakeItem"><span>${escape(w.en)}<br><span class="muted">${escape(w.jp)}</span></span></div>`).join("")}</div></div>`:""}
+  ${r.mistakes.length?`<div class="panel" style="margin-top:10px"><div class="mistakeListHeader"><b>もう一度間違えた問題</b><label class="revealAllLabel"><input type="checkbox" id="showAllMistakes"> 英単語を表示する</label></div><p class="muted" style="font-size:12px;margin:6px 0 10px">英単語は1つずつタップして表示できます。</p><div class="wordGroups" id="reviewMistakeList">${r.mistakes.map(w=>`<div class="mistakeItem revealMistakeRow"><span class="mistakeNo">${w.no}</span><button type="button" class="revealWordBtn" data-reveal-no="${w.no}" aria-pressed="false" aria-label="英単語を表示">タップして英単語を表示</button><span class="mistakeJp muted">${escape(w.jp)}</span><span class="revealedEn hidden">${escape(w.en)}</span></div>`).join("")}</div></div>`:""}
   <button class="secondary" id="doneReview" style="width:100%;margin-top:10px">問題設定へ戻る (Esc)</button></div>`;
+  const revealState=new Set();
+  const showAll=document.getElementById("showAllMistakes");
+  const list=document.getElementById("reviewMistakeList");
+  function paintRevealRows(){
+    if(!list)return;
+    list.querySelectorAll(".revealMistakeRow").forEach(row=>{
+      const no=Number(row.querySelector("[data-reveal-no]")?.dataset.revealNo);
+      const revealed=showAll?.checked || revealState.has(no);
+      const btn=row.querySelector(".revealWordBtn"), en=row.querySelector(".revealedEn");
+      if(btn){btn.classList.toggle("hidden",!!revealed);btn.setAttribute("aria-pressed",String(!!revealed));}
+      if(en)en.classList.toggle("hidden",!revealed);
+    });
+  }
+  showAll?.addEventListener("change",paintRevealRows);
+  list?.querySelectorAll("[data-reveal-no]").forEach(btn=>btn.addEventListener("click",()=>{revealState.add(Number(btn.dataset.revealNo));paintRevealRows()}));
   document.getElementById("doneReview").onclick=()=>{quiz=null;renderQuiz()};
 }
 function groupCounts(words){const c={"◎":0,"○":0,"△":0,"×":0,"？":0};words.forEach(w=>c[stateOf(stat(w.no))]++);return c}
