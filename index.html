@@ -331,7 +331,7 @@ function renderReview(){
   if(mode==="spell"){
     const input=document.getElementById("ans");
     input.focus({preventScroll:true});
-    input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkReview()}};
+    input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();if(quiz&&quiz.answered){document.getElementById("reviewNextBtn")?.click()}else{checkReview()}}};
   } else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkReview(4,true):checkReview(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
 }
