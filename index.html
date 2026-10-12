@@ -17,7 +17,7 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar input,.toolbar select,.field input,.field select{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:9px 11px;outline:none}
 .primary,.secondary,.danger{border:0;border-radius:11px;padding:10px 14px;font-weight:700}.primary{background:var(--accent);color:white}.secondary{background:var(--bg);border:1px solid var(--line)}.danger{background:#b82e35;color:white}
 .drawer{margin-top:16px;border:2px solid var(--line);border-radius:13px;overflow:hidden;background:var(--panel)}.drawer>summary{cursor:pointer;list-style:none;padding:15px 16px;font-size:16px;font-weight:800;color:var(--text);background:var(--bg)}.drawer>summary::-webkit-details-marker{display:none}.mistakeDrawerSummary{background:var(--bg)!important;border:2px solid var(--accent);color:var(--text)!important}.drawer>summary::before{content:"▸";display:inline-block;margin-right:8px;color:var(--accent);transition:transform .15s ease}.drawer[open]>summary::before{transform:rotate(90deg)}.drawerBody{padding:12px 16px 4px;border-top:1px solid var(--line)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%}.stateFilterDrawer{margin-top:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);min-width:0}.stateFilterDrawer>summary{display:flex;align-items:center;min-height:42px;padding:9px 11px;font-size:16px;font-weight:400;line-height:1.35;background:var(--bg);color:var(--text);white-space:normal}.stateFilterDrawer>summary::before{content:"▸";font-size:12px;margin-right:8px;flex:0 0 auto}.stateFilterDrawer[open]>summary::before{transform:rotate(90deg)}.stateFilterDrawer .drawerBody{padding:9px;background:var(--panel)}.stateFilterChoices{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}.stateFilterChoices label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text);margin:0;white-space:nowrap}.stateFilterChoices input{width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%;height:50px;box-sizing:border-box}.field{min-width:0}.grid>.field{align-self:start}.stateFilterDrawer{margin-top:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);min-width:0}.stateFilterDrawer>summary{display:flex;align-items:center;height:50px;min-height:50px;box-sizing:border-box;padding:9px 11px;font-size:16px;font-weight:400;line-height:1.35;background:var(--bg);color:var(--text);white-space:normal}.stateFilterDrawer>summary::before{content:"▸";font-size:12px;margin-right:8px;flex:0 0 auto}.stateFilterDrawer[open]>summary::before{transform:rotate(90deg)}.stateFilterDrawer .drawerBody{padding:9px;background:var(--panel)}.stateFilterChoices{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}.stateFilterChoices label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text);margin:0;white-space:nowrap}.stateFilterChoices input{width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto}
 .dataActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.fileInput{display:none}
 .datasetTabs{display:flex;gap:7px;overflow:auto;padding-bottom:5px}.datasetTab{white-space:nowrap;border:1px solid var(--line);background:var(--panel);padding:8px 11px;border-radius:10px}.datasetTab.active{border-color:var(--accent);color:var(--accent);font-weight:700}
 .wordGroups{display:grid;gap:8px;margin-top:12px}.group{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--panel)}.group summary{padding:11px 13px;cursor:pointer;font-weight:750}.wordList{border-top:1px solid var(--line)}.wordRow{display:grid;grid-template-columns:52px minmax(130px,1.1fr) minmax(180px,1.7fr) 75px 78px 78px;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}.wordRow:last-child{border-bottom:0}.num{color:var(--muted);font-variant-numeric:tabular-nums}.en{font-weight:750;overflow-wrap:anywhere}.jp{overflow-wrap:anywhere}.status{font-weight:800}.stat{font-size:12px;color:var(--muted)}.condition{font-weight:750}
@@ -178,7 +178,7 @@ function renderQuiz(){
               <label><input type="checkbox" name="stateFilter" value="stable"> ○ 安定</label>
               <label><input type="checkbox" name="stateFilter" value="warn"> △ 要注意</label>
               <label><input type="checkbox" name="stateFilter" value="weak"> × 苦手</label>
-            </div><div class="muted" style="margin-top:7px">何も変更しなければ、すべての学習状態が対象です。</div></div></details></div>
+            </div></div></details></div>
             <div class="field"><label>頭文字表示</label><select id="initialHint"><option value="off">なし</option><option value="on">あり</option></select></div>
           </div>
           <div id="quizAdminComment"></div><button id="startBtn" class="primary" style="margin-top:12px">開始 (Enter)</button>
@@ -440,20 +440,30 @@ function finishReview(){
   function paintRevealRows(){
     if(!list)return;
     list.querySelectorAll(".revealedEn").forEach(en=>{
-      const revealed=en.dataset.revealed==="true";
-      const visible=!!showAll?.checked||revealed;
-      en.classList.toggle("hidden",!visible);
-      if(en.tagName==="BUTTON"){
-        en.textContent=visible?en.dataset.answer:"タップして英単語を表示";
-        en.setAttribute("aria-label",visible?"英単語を表示中":"タップして英単語を表示");
-        en.classList.toggle("isRevealed",visible);
-      }
+      const override=en.dataset.revealOverride||"none";
+      const visible=showAll ? (showAll.checked ? override!=="hide" : override==="show") : true;
+      en.textContent=visible?en.dataset.answer:"タップして英単語を表示";
+      en.setAttribute("aria-label",visible?"タップして英単語を非表示":"タップして英単語を表示");
+      en.classList.toggle("isRevealed",visible);
+      en.setAttribute("aria-pressed",String(visible));
     });
   }
   if(list){
-    list.querySelectorAll(".revealedEn").forEach(en=>{en.dataset.answer=en.textContent;en.dataset.revealed="false";en.addEventListener("click",()=>{en.dataset.revealed="true";paintRevealRows()})});
+    list.querySelectorAll(".revealedEn").forEach(en=>{
+      en.dataset.answer=en.textContent;
+      en.dataset.revealOverride="none";
+      en.addEventListener("click",()=>{
+        const currentlyVisible=showAll ? (showAll.checked ? en.dataset.revealOverride!=="hide" : en.dataset.revealOverride==="show") : true;
+        en.dataset.revealOverride=currentlyVisible?"hide":"show";
+        paintRevealRows();
+      });
+    });
   }
-  showAll?.addEventListener("change",paintRevealRows);
+  showAll?.addEventListener("change",()=>{
+    // Master switch changes all rows; clear one-off overrides so the new state is consistent.
+    list?.querySelectorAll(".revealedEn").forEach(en=>en.dataset.revealOverride="none");
+    paintRevealRows();
+  });
   paintRevealRows();
   document.getElementById("doneReview").onclick=()=>{quiz=null;renderQuiz()};
 }
