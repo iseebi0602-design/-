@@ -331,7 +331,7 @@ function renderReview(){
   if(mode==="spell"){
     const input=document.getElementById("ans");
     input.focus({preventScroll:true});
-    input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();if(quiz&&quiz.answered){document.getElementById("reviewNextBtn")?.click()}else{checkReview()}}};
+    input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();if(quiz?.answered){document.getElementById("reviewNextBtn")?.click()}else{checkReview()}}};
   } else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkReview(4,true):checkReview(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>{quiz=null;renderQuiz()};
 }
@@ -718,7 +718,7 @@ document.addEventListener("keydown",e=>{
   }
   // Escape ends a live quiz. Space is intentionally left free for spelling input.
   if(e.key==="Escape"){e.preventDefault();quiz=null;renderQuiz();return}
-  if(quiz.answered){if(e.key==="Enter"){e.preventDefault();if(quiz.review){quiz.index++;quiz.answered=false;renderReview()}else nextQuestion()}return;}
+  if(quiz.answered){if(e.key==="Enter"){e.preventDefault();if(quiz.review){document.getElementById("reviewNextBtn")?.click()}else nextQuestion()}return;}
   if(["1","2","3","4"].includes(e.key)&&quiz.currentMode!=="spell"){const i=+e.key-1;if(quiz.choices?.[i])checkAnswer(i,false);}
   if(e.key==="5"&&quiz.currentMode!=="spell"){e.preventDefault();checkAnswer(4,true)}
 });
