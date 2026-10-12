@@ -401,18 +401,6 @@ function checkReview(i=null,isNone=false){
     renderReview();
     if(quiz.currentMode==="spell"){const input=document.getElementById("ans");if(input){try{input.focus({preventScroll:true})}catch(e){input.focus()}}}
   };
-  // Mobile spelling review: keep Enter working after the answer is shown.
-  // The input remains focused/readOnly, so Enter must activate the visible next button.
-  if(isMobileSpell){
-    const input=document.getElementById("ans");
-    if(input) input.onkeydown=e=>{
-      if(e.key==="Enter"){
-        e.preventDefault(); e.stopPropagation();
-        if(quiz.answered){ document.getElementById("reviewNextBtn")?.click(); }
-        else { checkReview(); }
-      }
-    };
-  }
   if(window.matchMedia("(max-width:700px)").matches){
     requestAnimationFrame(()=>{
       const box=document.getElementById("reviewResultBox");
@@ -477,7 +465,28 @@ async function checkAdmin(){
   try{const rows=await sbFetch("admin_users?select=user_id&user_id=eq."+encodeURIComponent(auth.user.id));isAdmin=Array.isArray(rows)&&rows.length>0}catch(e){isAdmin=false}
   const b=document.getElementById("navAdmin");if(b)b.style.display=isAdmin?"block":"none";return isAdmin;
 }
-async function loadPublicVocabulary(){try{const rows=await sbFetch("vocabulary?select=word_no,en,jp,exp&dataset_id=eq."+encodeURIComponent(currentDataset)+"&active=eq.true&order=word_no",{headers:{"Prefer":"return=representation"}});if(rows&&rows.length){const d=current();d.words=rows.map(r=>({no:r.word_no,en:r.en,jp:r.jp,exp:r.exp||""}));saveDB();return true}}catch(e){}return false}
+async function loadPublicVocabulary(){
+  try{
+    const rows=await sbFetch("vocabulary?select=word_no,en,jp,exp&dataset_id=eq."+encodeURIComponent(currentDataset)+"&active=eq.true&order=word_no",{headers:{"Prefer":"return=representation"}});
+    if(!Array.isArray(rows)||!rows.length)return false;
+    const incoming=rows.map(r=>({no:Number(r.word_no),en:String(r.en||""),jp:String(r.jp||""),exp:r.exp||""}));
+    // Leapの内蔵2300語は正本。サーバー側の公開データが途中までしかない場合、
+    // その不完全なデータで内蔵語彙を上書きすると、その範囲外が出題できなくなるため採用しない。
+    if(currentDataset==="leap-default"){
+      const complete=incoming.length===2300 && incoming.every((w,i)=>w.no===i+1&&w.en&&w.jp);
+      if(!complete){
+        const d=current();
+        if(!Array.isArray(d.words)||d.words.length!==2300||d.words.some((w,i)=>w.no!==i+1)){
+          d.words=DEFAULT_WORDS;
+          saveDB();
+        }
+        console.warn("公開語彙が2300語そろっていないため、内蔵Leap単語帳を維持しました。",incoming.length);
+        return false;
+      }
+    }
+    const d=current();d.words=incoming;saveDB();return true;
+  }catch(e){console.warn("loadPublicVocabulary",e);return false}
+}
 async function loadPublicComment(){try{const rows=await sbFetch("admin_comments?select=body&dataset_id=eq."+encodeURIComponent(currentDataset)+"&published=eq.true&order=updated_at.desc&limit=1",{headers:{"Prefer":"return=representation"}});return rows[0]||null}catch(e){return null}}
 async function loadNotices(){try{return await sbFetch("site_announcements?select=id,title,body,kind,published,created_at&published=eq.true&order=created_at.desc&limit=30")}catch(e){return []}}
 async function loadAdminStats(){
