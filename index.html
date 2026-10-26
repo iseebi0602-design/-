@@ -100,9 +100,8 @@ function loadDB(){
       else {
         const old=x.datasets[id];
         old.name="Leap単語帳";
-        if(!Array.isArray(old.words)||old.words.length!==DEFAULT_WORDS.length||old.words[0]?.en!==DEFAULT_WORDS[0].en||old.words[2299]?.en!==DEFAULT_WORDS[2299].en){
-          old.words=DEFAULT_WORDS;
-        }
+        // 第28回：内蔵CSVを毎回Leap標準データに同期する。学習記録(stats)や設定は維持。
+        old.words=DEFAULT_WORDS;
         if(!old.stats) old.stats={};
       }
       if(!x.currentDataset || !x.datasets[x.currentDataset]) x.currentDataset=id;
