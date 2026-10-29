@@ -10,7 +10,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
 button,input,select{font:inherit}button{cursor:pointer;color:inherit}.app{max-width:1050px;margin:auto;padding:12px 14px 40px}
 header{display:flex;align-items:center;gap:12px;min-height:48px}.logo{font-weight:850;font-size:19px;letter-spacing:.02em;margin-right:auto}
-.nav{display:flex;gap:4px}.nav button,.loginBtn,.themeBtn{border:0;background:transparent;padding:8px 10px;border-radius:9px;font-size:14px}.nav button.active{background:var(--panel);box-shadow:var(--shadow);font-weight:700}.noticeDot{display:inline-block;width:8px;height:8px;margin-left:5px;border-radius:50%;background:#dc2626;vertical-align:middle}.noticeList{display:grid;gap:10px}.noticePublicCard{border:1px solid var(--line);border-radius:13px;padding:14px 15px}.noticePublicHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}.noticePublicTitle{font-weight:850;font-size:18px}.noticePublicBody{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;margin-top:8px}.noticeUnread{border-left:4px solid #dc2626}.noticeToolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.adminOnly{display:none}.statusBadge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}.statusBadge.good{background:#dff3e8;color:#246b49}.statusBadge.stable{background:#e1ecff;color:#315fa8}.statusBadge.warn{background:#fff0d7;color:#8a5b12}.statusBadge.bad{background:#ffe2e2;color:#a43a3a}.statusBadge.unlearned{background:#eceff2;color:#59616b}.groupSummary{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.groupCounts{display:flex;gap:5px;flex-wrap:wrap}.adminGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.adminStat{border:1px solid var(--line);border-radius:13px;padding:14px}.adminStat b{font-size:24px;display:block}.noticeCard{border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-top:8px}.noticeCard summary{padding:12px 14px;cursor:pointer;font-weight:750;background:var(--bg)}.noticeBody{padding:13px 14px;border-top:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}.adminTable{width:100%;border-collapse:collapse}.adminTable th,.adminTable td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.adminActions{display:flex;gap:7px;flex-wrap:wrap}.commentCard{margin-top:12px;border-left:3px solid var(--accent);padding:11px 13px;background:var(--bg);border-radius:10px}.commentTitle{font-weight:800;font-size:13px;margin-bottom:5px}.badgeKey{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.nav{display:flex;gap:4px}.nav button,.loginBtn,.themeBtn{border:0;background:transparent;padding:8px 10px;border-radius:9px;font-size:14px}.nav button.active{background:var(--panel);box-shadow:var(--shadow);font-weight:700}.adminOnly{display:none}.statusBadge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}.statusBadge.good{background:#dff3e8;color:#246b49}.statusBadge.stable{background:#e1ecff;color:#315fa8}.statusBadge.warn{background:#fff0d7;color:#8a5b12}.statusBadge.bad{background:#ffe2e2;color:#a43a3a}.statusBadge.unlearned{background:#eceff2;color:#59616b}.groupSummary{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.groupCounts{display:flex;gap:5px;flex-wrap:wrap}.adminGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.adminStat{border:1px solid var(--line);border-radius:13px;padding:14px}.adminStat b{font-size:24px;display:block}.noticeCard{border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-top:8px}.noticeCard summary{padding:12px 14px;cursor:pointer;font-weight:750;background:var(--bg)}.noticeBody{padding:13px 14px;border-top:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}.adminTable{width:100%;border-collapse:collapse}.adminTable th,.adminTable td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.adminActions{display:flex;gap:7px;flex-wrap:wrap}.commentCard{margin-top:12px;border-left:3px solid var(--accent);padding:11px 13px;background:var(--bg);border-radius:10px}.commentTitle{font-weight:800;font-size:13px;margin-bottom:5px}.badgeKey{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 main{margin-top:10px}.screen{display:none}.screen.active{display:block}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
 h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px}
@@ -71,7 +71,7 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
   <div class="logo">英語はRHYTHM</div>
   <nav class="nav">
     <button id="navQuiz" class="active">問題</button>
-    <button id="navBook">単語帳</button><button id="navNotices">お知らせ<span id="noticeDot" class="noticeDot hidden" aria-label="未読あり"></span></button><button id="navAdmin" class="adminOnly">管理者</button>
+    <button id="navBook">単語帳</button><button id="navAdmin" class="adminOnly">管理者</button>
   </nav>
   <button id="themeBtn" class="themeBtn">☾</button>
   <button id="loginBtn" class="loginBtn">ログイン</button>
@@ -79,7 +79,6 @@ h1{font-size:25px;margin:4px 0 15px}h2{font-size:18px;margin:0 0 12px}.muted{col
 <main>
 <section id="quizScreen" class="screen active"></section>
 <section id="bookScreen" class="screen"></section>
-<section id="noticeScreen" class="screen"></section>
 <section id="adminScreen" class="screen"></section>
 </main>
 </div>
@@ -149,7 +148,7 @@ function record(no,ok,deltaOverride=null){
 }
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
 function escape(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function modeLabel(m){return m==="spell"?"スペル入力":m==="spellEndless"?"スペル入力（エンドレス）":m==="jp5"?"日本語5択":m==="en5"?"英語5択":"ミックス"}
+function modeLabel(m){return m==="spell"?"スペル入力":m==="jp5"?"日本語5択":m==="en5"?"英語5択":"ミックス"}
 function render(){
   renderQuiz(); renderBook();
 }
@@ -159,6 +158,7 @@ function renderQuiz(){
   el.innerHTML=`
     <div class="panel">
       <h1>問題</h1>
+      <details class="drawer"><summary>お知らせ</summary><div class="drawerBody" id="noticeBoard"><div class="muted">読み込み中…</div></div></details>
       <details class="drawer" open>
         <summary>出題設定</summary>
         <div class="drawerBody">
@@ -169,7 +169,7 @@ function renderQuiz(){
             <div class="field"><label>問題数</label><input id="count" type="number" min="1" max="100" value="${getSettings().count||20}"></div>
           </div>
           <div class="grid" style="margin-top:10px">
-            <div class="field"><label>出題モード</label><select id="mode"><option value="spell">スペル入力</option><option value="spellEndless">スペル入力（エンドレス）</option><option value="jp5">日本語5択</option><option value="en5">英語5択</option><option value="mix">ミックス</option></select></div>
+            <div class="field"><label>出題モード</label><select id="mode"><option value="spell">スペル入力</option><option value="jp5">日本語5択</option><option value="en5">英語5択</option><option value="mix">ミックス</option></select></div>
             <div class="field"><details class="drawer stateFilterDrawer"><summary>学習状態（複数選択可）</summary><div class="drawerBody"><div class="stateFilterChoices" id="stateFilterChoices">
               <label><input type="checkbox" name="stateFilter" value="all"> すべて</label>
               <label><input type="checkbox" name="stateFilter" value="unlearned"> ？ 未学習</label>
@@ -200,6 +200,7 @@ function renderQuiz(){
   document.getElementById("setSelect").onchange=e=>{currentDataset=e.target.value;db.currentDataset=currentDataset;saveDB();renderQuiz()};
   ["fromNo","toNo","count","mode","initialHint"].forEach(id=>document.getElementById(id).addEventListener("change",saveSettingsFromUI));
   document.getElementById("startBtn").onclick=startQuiz;
+  loadNotices().then(notices=>{const box=document.getElementById("noticeBoard");if(!box)return;box.innerHTML=notices.length?notices.map(n=>`<details class="noticeCard"><summary>${escape(n.title)} <span class="tag">${escape(n.kind||"通常")}</span></summary><div class="noticeBody">${escape(n.body)}</div></details>`).join(""):"<div class=\"empty\">お知らせはありません。</div>"}).catch(()=>{});
   loadPublicComment().then(x=>{const box=document.getElementById("quizAdminComment");if(x)box.innerHTML=`<div class="commentCard"><div class="commentTitle">管理者からのコメント</div><div>${escape(x.body)}</div></div>`}).catch(()=>{});
 }
 function makeChoices(w,field){
@@ -233,7 +234,6 @@ function renderQuizActive(el){
   const w=quiz.queue[quiz.index], v=stat(w.no);
   let mode=quiz.mode;
   if(mode==="mix") mode=quiz.mixModes?.[quiz.index]||"spell";
-  if(mode==="spellEndless") mode="spell";
   quiz.currentMode=mode;
   const q=mode==="spell"||mode==="en5"?w.jp:w.en;
   let answerArea="";
@@ -246,7 +246,7 @@ function renderQuizActive(el){
   el.innerHTML=`
     <div class="panel">
       <div class="quizTop"><div class="progress">${quiz.index+1} / ${quiz.queue.length}</div><button class="end" id="endBtn">終了 (Esc)</button></div>
-      <div class="questionCard"><div class="qLabel">${quiz.mode==="spellEndless"?"スペル入力（エンドレス）":modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">${statusBadge(stateOf(v))}${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
+      <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">${statusBadge(stateOf(v))}${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
       <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
     </div>`;
   if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}})}
@@ -262,21 +262,14 @@ function checkAnswer(choiceIndex=null,isNone=false){
     if(isNone){user="この中にはない";ok=!!quiz.noneCorrect;}
     else{user=quiz.choices[choiceIndex]?.en||"";ok=!quiz.noneCorrect && quiz.choices[choiceIndex]?.no===w.no;}
   }
-  const retrying=!!quiz.endlessRetry;
-  const rec=retrying?{before:stat(w.no).cond,after:stat(w.no).cond}:record(w.no,ok);
-  quiz.answered=true;
-  quiz.session.push({word:w,mode,ok,user,condition:rec,retry:retrying});
-  if(!ok&&!retrying)quiz.mistakes.push({word:w,mode,user,initialHint:quiz.initialHint});
+  const rec=record(w.no,ok);
+  quiz.answered=true;quiz.session.push({word:w,mode,ok,user,condition:rec});
+  if(!ok)quiz.mistakes.push({word:w,mode,user,initialHint:quiz.initialHint});
   const box=document.getElementById("resultBox");
   const answerText=mode==="jp5"?w.jp:w.en;
   const noneNote=(!ok && quiz.noneCorrect && !isNone)?`<div class="noneResult">「この中にはない」</div>`:"";
-  const btnText=quiz.mode==="spellEndless"?(ok?"次の問題 (Enter)":"もう一度解く (Enter)"):"次の問題 (Enter)";
-  box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${retrying?"記録なし":`${rec.before} → ${rec.after}`}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">${btnText}</button></div></div>`;
-  document.getElementById("nextBtn").onclick=()=>{
-    if(quiz.mode==="spellEndless"&&!ok){quiz.answered=false;quiz.endlessRetry=true;renderQuizActive(document.getElementById("quizScreen"));return;}
-    if(quiz.mode==="spellEndless"&&retrying){quiz.endlessRetry=false;}
-    nextQuestion();
-  };
+  box.innerHTML=`<div class="result"><div class="resultTitle ${ok?"good":"bad"}">${ok?"正解":"不正解"}</div>${noneNote}<div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}<div class="retention"><span>定着度</span><b>${rec.before} → ${rec.after}</b></div><div class="nextWrap"><button class="primary" id="nextBtn">次の問題 (Enter)</button></div></div>`;
+  document.getElementById("nextBtn").onclick=nextQuestion;
   if(mode==="spell" && window.matchMedia("(max-width:700px)").matches){requestAnimationFrame(()=>document.getElementById("resultBox")?.scrollIntoView({behavior:"smooth",block:"start"}));}
 }
 function diffHtml(a,b){
@@ -325,7 +318,7 @@ function diffHtml(a,b){
   }
   return out || `<span class="same">${escape(b)}</span>`;
 }
-function nextQuestion(){if(!quiz.answered)return;quiz.index++;quiz.answered=false;quiz.endlessRetry=false;renderQuizActive(document.getElementById("quizScreen"))}
+function nextQuestion(){if(!quiz.answered)return;quiz.index++;quiz.answered=false;renderQuizActive(document.getElementById("quizScreen"))}
 function endQuiz(){if(!quiz)return;quiz.active=false;quiz.ended=true;showSummary()}
 function finishSession(){quiz.active=false;quiz.ended=true;showSummary()}
 function showSummary(){
@@ -344,8 +337,7 @@ function showSummary(){
   if(rb)rb.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();rb.click()}};
 }
 function startReview(items,noRecord){
-  const endless=quiz?.mode==="spellEndless";
-  quiz={active:true,review:true,endless,queue:shuffle(items),index:0,mode:"review",initialHint:false,answered:false,noRecord:endless?true:noRecord,session:[],mistakes:[]};
+  quiz={active:true,review:true,queue:shuffle(items),index:0,mode:"review",initialHint:false,answered:false,noRecord,session:[],mistakes:[]};
   renderReview();
 }
 function renderReview(){
@@ -378,7 +370,7 @@ function checkReview(i=null,isNone=false){
     ok=!quiz.noneCorrect && quiz.choices[i]?.no===w.no;
   }
   const beforeCond=stat(w.no).cond;
-  if(!quiz.noRecord&&!quiz.endless)record(w.no,ok,ok?5:-5);
+  if(!quiz.noRecord)record(w.no,ok,ok?5:-5);
   quiz.answered=true;
   quiz.session.push({word:w,ok});
   if(!ok)quiz.mistakes.push(w);
@@ -393,7 +385,7 @@ function checkReview(i=null,isNone=false){
       <div class="correctLabel">正しい答え</div><div class="correctAnswer">${escape(answerText)}</div>
       ${mode==="spell"?`<div class="diffLabel">スペル比較</div><div class="diff">${diffHtml(user,w.en)}</div>`:""}
       <div class="retention"><span>定着度</span><b>${quiz.noRecord?"記録なし":`${beforeCond} → ${afterCond}`}</b></div>
-      <div class="nextWrap"><button class="primary" id="reviewNextBtn">${quiz.endless&&!ok?"もう一度解く (Enter)":"次の問題 (Enter)"}</button></div>
+      <div class="nextWrap"><button class="primary" id="reviewNextBtn">次の問題 (Enter)</button></div>
     </div>`;
   if(isMobileSpell){
     // Keep the existing input element alive. Replacing quizScreen would make iOS dismiss the keyboard.
@@ -411,7 +403,6 @@ function checkReview(i=null,isNone=false){
   const end=document.getElementById("endBtn"); if(end) end.onclick=()=>{quiz=null;renderQuiz()};
   const next=document.getElementById("reviewNextBtn");
   if(next) next.onclick=()=>{
-    if(quiz.endless&&!ok){quiz.answered=false;renderReview();return;}
     const nextItem=quiz.queue[quiz.index+1];
     quiz.index++; quiz.answered=false;
     if(isMobileSpell && nextItem && nextItem.mode==="spell"){
@@ -499,7 +490,7 @@ function wordRow(w){const v=stat(w.no),st=stateOf(v),r=(v.recent||[]).slice(-4);
 
 function startSingleWord(no){
   const w=current().words.find(x=>x.no===no);if(!w)return;
-  quiz={active:true,queue:[w],index:0,mode:"spellEndless",initialHint:false,answered:false,session:[],mistakes:[],single:true,endlessRetry:false};
+  quiz={active:true,queue:[w],index:0,mode:"random",jpTrack:true,answered:false,session:[],mistakes:[],single:true};
   showScreen("quiz");renderQuiz();
 }
 function importCSV(text,name){
@@ -634,16 +625,7 @@ async function editVocabulary(no){const w=current().words.find(x=>x.no===no);if(
 async function logAdminAction(action,detail){try{await sbFetch("admin_audit_logs",{method:"POST",body:JSON.stringify({admin_user_id:auth.user.id,action,detail:detail||{}})})}catch(e){}}
 async function recordVisit(){try{let key=localStorage.getItem("rhythm_visitor_key");if(!key){key=uid();localStorage.setItem("rhythm_visitor_key",key)}await sbFetch("site_visits",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify({visitor_key:key,user_id:auth?.user?.id||null,user_agent:navigator.userAgent.slice(0,300)})})}catch(e){}}
 
-const NOTICE_READ_KEY="rhythm_notice_read_v1";
-function getReadNoticeIds(){try{return JSON.parse(localStorage.getItem(NOTICE_READ_KEY)||"[]")}catch(e){return []}}
-function saveReadNoticeIds(ids){try{localStorage.setItem(NOTICE_READ_KEY,JSON.stringify([...new Set(ids.map(String))]))}catch(e){}}
-let noticeCache=[];
-function updateNoticeDot(){const read=new Set(getReadNoticeIds());const dot=document.getElementById("noticeDot");if(dot)dot.classList.toggle("hidden",!noticeCache.some(n=>!read.has(String(n.id))))}
-async function renderNotices(){const el=document.getElementById("noticeScreen");el.innerHTML='<div class="panel"><h1>お知らせ</h1><p class="muted">読み込み中…</p></div>';noticeCache=await loadNotices();const read=new Set(getReadNoticeIds());updateNoticeDot();el.innerHTML=`<div class="panel"><div class="noticeToolbar"><h1 style="margin:4px 0">お知らせ</h1><div><span class="muted" id="noticeUnreadCount">未読 ${noticeCache.filter(n=>!read.has(String(n.id))).length}件</span> <button id="markAllRead" class="secondary">すべて既読</button></div></div>${noticeCache.length?`<div class="noticeList">${noticeCache.map(n=>{const unread=!read.has(String(n.id));return `<article class="noticePublicCard ${unread?"noticeUnread":""}" data-notice-id="${escape(n.id)}"><div class="noticePublicHead">${n.kind?`<span class="tag">${escape(n.kind)}</span>`:""}<span class="muted">${n.created_at?new Date(n.created_at).toLocaleDateString("ja-JP"):""}</span>${unread?'<span class="tag" style="color:#dc2626">未読</span>':'<span class="tag">既読</span>'}</div><div class="noticePublicTitle">${escape(n.title)}</div><div class="noticePublicBody">${escape(n.body)}</div></article>`}).join("")}</div>`:'<div class="empty">お知らせはありません。</div>'}</div>`;
- el.querySelectorAll(".noticePublicCard").forEach(card=>card.addEventListener("click",()=>{const ids=getReadNoticeIds();ids.push(card.dataset.noticeId);saveReadNoticeIds(ids);const item=noticeCache.find(n=>String(n.id)===card.dataset.noticeId);if(item){card.classList.remove("noticeUnread");const tag=card.querySelector(".noticePublicHead .tag:last-child");if(tag){tag.textContent="既読";tag.style.color=""}}const left=noticeCache.filter(n=>!new Set(getReadNoticeIds()).has(String(n.id))).length;const count=document.getElementById("noticeUnreadCount");if(count)count.textContent=`未読 ${left}件`;updateNoticeDot()}));
- document.getElementById("markAllRead").onclick=()=>{saveReadNoticeIds([...getReadNoticeIds(),...noticeCache.map(n=>String(n.id))]);renderNotices()};
-}
-function showScreen(which){["quiz","book","notice","admin"].forEach(k=>document.getElementById(k+"Screen").classList.toggle("active",which===k));document.getElementById("navQuiz").classList.toggle("active",which==="quiz");document.getElementById("navBook").classList.toggle("active",which==="book");document.getElementById("navNotices").classList.toggle("active",which==="notice");document.getElementById("navAdmin").classList.toggle("active",which==="admin")}
+function showScreen(which){document.getElementById("quizScreen").classList.toggle("active",which==="quiz");document.getElementById("bookScreen").classList.toggle("active",which==="book");document.getElementById("adminScreen").classList.toggle("active",which==="admin");document.getElementById("navQuiz").classList.toggle("active",which==="quiz");document.getElementById("navBook").classList.toggle("active",which==="book");document.getElementById("navAdmin").classList.toggle("active",which==="admin")}
 
 const SUPABASE_URL="https://rxbzpbpgtobwyrvlrvgk.supabase.co";
 const SUPABASE_KEY="sb_publishable_fSAK1aeplM9tW_YQKD9c3Q_ujspntUw";
@@ -754,7 +736,6 @@ async function updateLoginButton(){
 
 document.getElementById("navQuiz").onclick=()=>{showScreen("quiz");renderQuiz()};
 document.getElementById("navBook").onclick=()=>{showScreen("book");renderBook()};
-document.getElementById("navNotices").onclick=()=>{showScreen("notice");renderNotices()};
 document.getElementById("navAdmin").onclick=async()=>{showScreen("admin");await renderAdmin()};
 document.getElementById("themeBtn").onclick=()=>{const d=document.documentElement,t=d.dataset.theme==="dark"?"":"dark";d.dataset.theme=t;localStorage.setItem(THEME,t);document.getElementById("themeBtn").textContent=t?"☀":"☾"};
 document.getElementById("loginBtn").onclick=authModal;
@@ -763,7 +744,6 @@ if(localStorage.getItem(THEME)==="dark"){document.documentElement.dataset.theme=
 // iPad/SafariでSupabaseへの通信が遅い場合でも白画面にならないようにする。
 try{updateLoginButton()}catch(e){}
 try{recordVisit()}catch(e){}
-loadNotices().then(n=>{noticeCache=n;updateNoticeDot()}).catch(()=>{});
 try{render()}catch(e){
   document.getElementById("quizScreen").innerHTML='<div class="panel"><h1>問題</h1><p class="muted">読み込み中にエラーが発生しました。ページを再読み込みしてください。</p></div>';
 }
@@ -773,6 +753,16 @@ if(auth?.access_token) checkAdmin().catch(()=>{});
   try{if(auth?.access_token)await Promise.race([cloudLoadStats(),new Promise(r=>setTimeout(r,2500))])}catch(e){}
   try{render()}catch(e){}
 })();
+// Enterキーを確実に処理する（結果表示後は入力欄のフォーカス状態に依存させない）
+document.addEventListener("keydown",e=>{
+  if(e.key === "Enter" && quiz && quiz.active && quiz.answered){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(quiz.review){document.getElementById("reviewNextBtn")?.click();}
+    else nextQuestion();
+    return;
+  }
+}, true);
 document.addEventListener("keydown",e=>{
   // Result screen shortcuts: Enter starts mistake review, Escape returns to settings.
   if(quiz && quiz.ended && !quiz.active){
