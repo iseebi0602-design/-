@@ -249,7 +249,23 @@ function renderQuizActive(el){
       <div class="questionCard"><div class="qLabel">${modeLabel(mode)}</div><div class="question">${escape(q)}</div><div class="conditionNow">${statusBadge(stateOf(v))}${mode==="spell"&&quiz.initialHint?`　　頭文字 <b>${escape(w.en.charAt(0))}</b>`:""}</div></div>
       <div class="answerArea">${answerArea}<div id="resultBox"></div></div>
     </div>`;
-  if(mode==="spell"){document.getElementById("ans").focus();document.getElementById("ans").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();checkAnswer()}})}
+  if(mode==="spell"){
+    const ans=document.getElementById("ans");
+    ans.focus();
+    ans.addEventListener("keydown",e=>{
+      if(e.key!=="Enter") return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Enter は画面上の状態に合わせて、回答・次の問題を確実に実行する。
+      if(quiz?.answered){
+        const action=document.getElementById("retryBtn")||document.getElementById("nextBtn")||document.getElementById("reviewNextBtn");
+        if(action) action.click();
+        else if(!quiz.review) nextQuestion();
+      }else{
+        checkAnswer();
+      }
+    });
+  }
   else document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>b.dataset.none?checkAnswer(4,true):checkAnswer(+b.dataset.i,false));
   document.getElementById("endBtn").onclick=()=>endQuiz();
 }
@@ -753,16 +769,6 @@ if(auth?.access_token) checkAdmin().catch(()=>{});
   try{if(auth?.access_token)await Promise.race([cloudLoadStats(),new Promise(r=>setTimeout(r,2500))])}catch(e){}
   try{render()}catch(e){}
 })();
-// Enterキーを確実に処理する（結果表示後は入力欄のフォーカス状態に依存させない）
-document.addEventListener("keydown",e=>{
-  if(e.key === "Enter" && quiz && quiz.active && quiz.answered){
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    if(quiz.review){document.getElementById("reviewNextBtn")?.click();}
-    else nextQuestion();
-    return;
-  }
-}, true);
 document.addEventListener("keydown",e=>{
   // Result screen shortcuts: Enter starts mistake review, Escape returns to settings.
   if(quiz && quiz.ended && !quiz.active){
@@ -779,7 +785,16 @@ document.addEventListener("keydown",e=>{
   }
   // Escape ends a live quiz. Space is intentionally left free for spelling input.
   if(e.key==="Escape"){e.preventDefault();quiz=null;renderQuiz();return}
-  if(quiz.answered){if(e.key==="Enter"){e.preventDefault();if(quiz.review){document.getElementById("reviewNextBtn")?.click()}else nextQuestion()}return;}
+  if(quiz.answered){
+    if(e.key==="Enter"){
+      e.preventDefault();
+      const action=document.getElementById("retryBtn")||document.getElementById("nextBtn")||document.getElementById("reviewNextBtn");
+      if(action) action.click();
+      else if(quiz.review) nextReviewQuestion?.();
+      else nextQuestion();
+    }
+    return;
+  }
   if(["1","2","3","4"].includes(e.key)&&quiz.currentMode!=="spell"){const i=+e.key-1;if(quiz.choices?.[i])checkAnswer(i,false);}
   if(e.key==="5"&&quiz.currentMode!=="spell"){e.preventDefault();checkAnswer(4,true)}
 });
